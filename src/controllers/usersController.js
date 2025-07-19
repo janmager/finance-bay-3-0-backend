@@ -16,8 +16,15 @@ export async function createUser(req, res){
         const if_is = await sql`
             SELECT * FROM users WHERE id = ${user_id} OR email = ${email}
         `;
+        
         if(if_is.length > 0){
-            return res.status(200).json({data: if_is[0]})
+            if(if_is[0].username == ''){
+                const init_username = await sql`
+                    UPDATE users SET username = ${username} WHERE id = ${user_id} RETURNING *
+                `;
+                return res.status(200).json({data: init_username[0]})
+            }
+            else return res.status(200).json({data: if_is[0]})
         }
 
         const users = await sql`

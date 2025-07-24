@@ -1,8 +1,10 @@
 import express from "express"
-import { sql } from "../config/db.js";
-import { createUser } from "../controllers/usersController.js";
+import { createUser, getUserOverview, updateUserBalance } from "../controllers/usersController.js";
 
 const router = express.Router();
 
 router.post("/", createUser);
+router.get("/userOverview/:userId", getUserOverview);
+router.get("/updateBalance/:userId", updateUserBalance);
+
 export default router;

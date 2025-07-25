@@ -1,6 +1,6 @@
 import express from "express"
 import { sql } from "../config/db.js";
-import { createTransaction, deleteTransaction, getSummaryByUserId, getLastDaysUserTransactions, getUserMostCategoriesStats, getTransactionByUserId } from '../controllers/transactionsController.js'
+import { createTransaction, deleteTransaction, getTransactionDailyGroupedByUserId, getSummaryByUserId, getLastDaysUserTransactions, getUserMostCategoriesStats, getTransactionByUserId } from '../controllers/transactionsController.js'
 
 const router = express.Router();
 
@@ -15,5 +15,7 @@ router.get("/most-categories-stats-this-month/:userId", getUserMostCategoriesSta
 router.delete("/:id", deleteTransaction);
 
 router.get("/summary/:userId", getSummaryByUserId);
+
+router.get("/day-grouped/:userId", getTransactionDailyGroupedByUserId)
 
 export default router;

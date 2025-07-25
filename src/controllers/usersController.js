@@ -101,14 +101,14 @@ export async function getUserOverview(req, res) {
 
     if (thisMonthTransactionsResult.length) {
       thisMonthTransactionsResult.map((operation) => {
-        if (operation.type == "expense")
+        if (operation.type == "expense" && operation.internal_operation == false)
           local_total.thisMonth.expense += Math.abs(operation.amount);
       });
     }
 
     if (lastMonthTransactionsResult.length) {
       lastMonthTransactionsResult.map((operation) => {
-        if (operation.type == "expense")
+        if (operation.type == "expense" && operation.internal_operation == false)
           local_total.lastMonth.expense += Math.abs(operation.amount);
       });
     }

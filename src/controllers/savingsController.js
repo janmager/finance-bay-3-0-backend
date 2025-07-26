@@ -34,7 +34,6 @@ export async function createSaving(req, res) {
     if (!title || !goal) {
       return res.status(400).json({ message: "All fields are required." });
     }
-    console.log(title, goal, userId);
 
     const id = crypto.randomUUID();
     const savings = await sql`
@@ -70,8 +69,6 @@ export async function depositToSaving(req, res) {
     const { amount, saving_id } = req.body;
     const { userId } = req.params;
 
-    console.log(amount, saving_id, userId);
-
     if (!amount || !saving_id || !userId) {
       return res.status(400).json({ message: "All fields are required." });
     }
@@ -87,7 +84,7 @@ export async function depositToSaving(req, res) {
       },
       body: JSON.stringify({
         user_id: userId,
-        title: "Wpłata na cel oszczędnościowy",
+        title: "Wpłata oszczędności",
         amount,
         category: "invest-goal",
         note: `Wpłata ${amount.toFixed(2)}zł na cel oszczędnościowy ${
@@ -121,7 +118,25 @@ export async function withdrawFromSaving(req, res) {
             UPDATE savings SET deposited = deposited - ${amount} WHERE id = ${saving_id} AND user_id = ${userId} RETURNING *
         `;
 
-    if (updateSaving.length) {
+    const addUserTransaction = await fetch(API_URL + "/api/transactions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        title: "Wypłata oszczędności",
+        amount,
+        category: "invest-goal",
+        note: `Wypłata ${amount.toFixed(2)}zł z celu oszczędnościowego ${
+          updateSaving[0].title
+        }.`,
+        transaction_type: "income",
+        internal_operation: true,
+      }),
+    });
+
+    if (updateSaving.length && addUserTransaction.ok) {
       res.status(200).json(updateSaving[0]);
     } else {
       res.status(404).json({ message: "Saving not found." });

@@ -44,7 +44,9 @@ export async function updateUserBalance(req, res) {
     const { new_balance } = req.body;
     const { userId } = req.params;
 
-    if (!userId || !type || !new_balance) {
+    console.log(new_balance, userId)
+
+    if (!userId || !new_balance) {
       return res.status(400).json({ message: "All fields are required." });
     }
 

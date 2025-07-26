@@ -61,10 +61,16 @@ export async function getTransactionDailyGroupedByUserId(req, res) {
 
         const amount = parseFloat(transaction.amount);
 
-        if (transaction.type === "income" && transaction.internal_operation == false) {
+        if (
+          transaction.type === "income" &&
+          transaction.internal_operation == false
+        ) {
           dailySummary[formattedDate].totalIncome += amount;
           dailySummary[formattedDate].dailyBalance += amount;
-        } else if (transaction.type === "expense" && transaction.internal_operation == false) {
+        } else if (
+          transaction.type === "expense" &&
+          transaction.internal_operation == false
+        ) {
           dailySummary[formattedDate].totalExpense += amount;
           dailySummary[formattedDate].dailyBalance += amount;
         }
@@ -201,26 +207,34 @@ export async function getUserMostCategoriesStats(req, res) {
         const { category, amount, type, internal_operation } = transaction;
         outputObj[category] = {
           type: type,
-          ...((type == "expense" && internal_operation == false) && { percentage_of_total_expenses: null }),
-          ...((type == "income" && internal_operation == false) && { percentage_of_total_incomes: null }),
+          ...(type == "expense" &&
+            internal_operation == false && {
+              percentage_of_total_expenses: null,
+            }),
+          ...(type == "income" &&
+            internal_operation == false && {
+              percentage_of_total_incomes: null,
+            }),
           total_expense:
-            (type == "expense" && internal_operation == false)
+            type == "expense" && internal_operation == false
               ? (outputObj[category]?.total_expense ?? 0) + Math.abs(amount)
               : outputObj[category]?.total_expense ?? 0,
           total_income:
-            (type == "income" && internal_operation == false)
+            type == "income" && internal_operation == false
               ? (outputObj[category]?.total_income ?? 0) + Math.abs(amount)
               : outputObj[category]?.total_income ?? 0,
         };
-        if (type == "expense" && internal_operation == false) total_expense += Math.abs(amount);
-        if (type == "income" && internal_operation == false) total_income += Math.abs(amount);
+        if (type == "expense" && internal_operation == false)
+          total_expense += Math.abs(amount);
+        if (type == "income" && internal_operation == false)
+          total_income += Math.abs(amount);
       });
 
       // percentage_of_total_expenses
       Object.keys(outputObj).forEach((category) => {
         outputObj[category] = {
           ...outputObj[category],
-          ...((outputObj[category].type == "expense") && {
+          ...(outputObj[category].type == "expense" && {
             percentage_of_total_expenses: Number(
               (
                 (outputObj[category].total_expense / total_expense) *
@@ -228,7 +242,7 @@ export async function getUserMostCategoriesStats(req, res) {
               ).toFixed(2)
             ),
           }),
-          ...((outputObj[category].type == "income") && {
+          ...(outputObj[category].type == "income" && {
             percentage_of_total_incomes: Number(
               ((outputObj[category].total_income / total_income) * 100).toFixed(
                 2
@@ -388,6 +402,33 @@ export async function getSummaryByUserId(req, res) {
     });
   } catch (e) {
     console.log("Error getting the transaction summary: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+export async function returnTransaction(req, res) {
+  try {
+    const { userId } = req.params;
+    const { transaction_id } = req.body;
+
+    console.log(transaction_id);
+    const delTransaction = await sql`
+            DELETE FROM transactions WHERE id = ${transaction_id} RETURNING *
+        `;
+    if (delTransaction.length) {
+      const updateBalanace = await sql`
+                UPDATE users SET balance = balance + ${
+                  -1 * Number(delTransaction[0].amount)
+                } WHERE id = ${userId}
+             RETURNING *`;
+      console.log(updateBalanace);
+
+      if (updateBalanace.length) {
+        res.status(200).json(delTransaction[0]);
+      } else throw "err";
+    } else throw "err";
+  } catch (e) {
+    console.log("Error returning the transaction: ", e);
     res.status(500).json({ message: "Something went wrong." });
   }
 }

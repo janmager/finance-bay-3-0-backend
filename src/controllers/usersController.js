@@ -28,9 +28,9 @@ export async function createUser(req, res) {
     }
 
     const users = await sql`
-        INSERT INTO users (id, email, username, monthly_limit, avatar) 
-        VALUES (${user_id}, ${email}, ${username ?? ""}, 3000, ${avatar})
-            RETURNING *
+        INSERT INTO users (id, email, username, monthly_limit, avatar, balance) 
+        VALUES (${user_id}, ${email}, ${username ?? ""}, 3000, ${avatar}, 0)
+            RETURNING *``
         `;
     res.status(201).json({ data: users[0] });
   } catch (e) {

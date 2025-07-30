@@ -38,6 +38,26 @@ export async function createUser(req, res) {
   }
 }
 
+export async function saveUserBalancesToLogs(req, res){
+  try{
+    const users = await sql`
+      SELECT * FROM users
+    `;
+
+    for (const user of users) {
+      const id = crypto.randomUUID();
+      const balanceLog = await sql`
+        INSERT INTO balances_logs (id, user_id, balance, created_at)
+        VALUES (${id}, ${user.id}, ${Number(user.balance)}, ${new Date().valueOf()})
+      `;
+    }
+  }
+  catch(e){
+    console.log("Error in saveUserBalancesToLogs: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
 export async function updateUserBalance(req, res) {
   try {
     const { new_balance } = req.body;

@@ -8,7 +8,7 @@ import cronsRoute from "./routes/cronsRoute.js";
 import savingsRoute from "./routes/savingsRoute.js";
 import recurringsRoute from "./routes/recurringsRoute.js";
 import cors from "cors";
-import { checkUsersRecurrings, wakeupJob } from "./config/cron.js";
+import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob } from "./config/cron.js";
 
 dotenv.config();
 
@@ -19,9 +19,11 @@ app.use(cors());
 app.use(rateLimiter);
 app.use(express.json());
 
-// if(process.env.NODE_ENV === 'production') wakeupJob.start();
-wakeupJob.start();
-checkUsersRecurrings.start();
+if (process.env.NODE_ENV === "production") {
+  wakeupJob.start();
+  checkUsersRecurrings.start();
+  saveUsersWalletsBalances.start();
+}
 
 const PORT = process.env.PORT || 5001;
 

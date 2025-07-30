@@ -105,7 +105,7 @@ export async function saveUserTotalAcccountValueTologs(req, res){
       const accountValueLog = await sql`
         INSERT INTO account_value_logs (id, user_id, value, created_at)
         VALUES (${id}, ${user.id}, ${Number(
-        total
+        JSON.stringify(total)
       )}, ${new Date().valueOf()})
       `;
     }

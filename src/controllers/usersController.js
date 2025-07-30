@@ -99,8 +99,7 @@ export async function saveUserTotalAcccountValueTologs(req, res){
 
     for (const user of users) {
       const id = crypto.randomUUID();
-      let total = await fetch(`${API_URL}/api/users/totalAccountValue`);
-      let totalResult = await total.json();
+      let total = await fetch(`${API_URL}/api/users/totalAccountValue/${user.id}`);
 
       const accountValueLog = await sql`
         INSERT INTO account_value_logs (id, user_id, value, created_at)

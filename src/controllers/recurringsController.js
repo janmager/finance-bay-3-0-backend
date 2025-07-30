@@ -86,7 +86,7 @@ export async function checkAllUsersForRecurrings() {
         const currentMonth = getCurrentMonthRecurring();
         if (recurring.last_month_paid !== currentMonth) {
           const today = new Date();
-          if (today.getDate() >= recurring.day_of_month) {
+          if (today.getDate() >= Number(recurring.day_of_month)) {
             // Create transaction
             await fetch(API_URL + "/api/transactions", {
               method: "POST",

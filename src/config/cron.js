@@ -7,7 +7,7 @@ import { saveUserBalancesToLogs } from "../controllers/usersController.js";
 // for active state render server (going to sleep after 15min of disactive)
 export const wakeupJob = new cron.CronJob("*/14 * * * *", function () {
   https
-    .get(API_URL, (res) => {
+    .get(API_URL+'/api/health', (res) => {
       if (res.statusCode === 200) console.log("[CRON] wakeupJob successfully.");
       else console.log("GET request failed", res.statusCode);
     })
@@ -21,7 +21,7 @@ export const checkUsersRecurrings = new cron.CronJob("0 0 */6 * * *", function a
 });
 
 // Every 30 minutes
-export const saveUsersWalletsBalances = new cron.CronJob("0 */5 * * * *", function async () {
+export const saveUsersWalletsBalances = new cron.CronJob("0 */30 * * * *", function async () {
   saveUserBalancesToLogs();
   console.log("[CRON] saveUserBalancesToLogs successfully.");
 });

@@ -1,4 +1,3 @@
-
 import { sql } from "../config/db.js";
 
 export async function createUser(req, res) {
@@ -17,7 +16,7 @@ export async function createUser(req, res) {
     const if_is = await sql`
             SELECT * FROM users WHERE id = ${user_id} OR email = ${email}
         `;
-        
+
     if (if_is.length > 0) {
       if (if_is[0].username == "") {
         const init_username = await sql`
@@ -29,7 +28,9 @@ export async function createUser(req, res) {
 
     const users = await sql`
         INSERT INTO users (id, email, username, monthly_limit, avatar, currency, balance) 
-        VALUES (${user_id}, ${email}, ${username ?? ""}, 3000, ${avatar}, 'pln', 0)
+        VALUES (${user_id}, ${email}, ${
+      username ?? ""
+    }, 3000, ${avatar}, 'pln', 0)
             RETURNING *`;
     res.status(201).json({ data: users[0] });
   } catch (e) {
@@ -38,8 +39,95 @@ export async function createUser(req, res) {
   }
 }
 
-export async function saveUserBalancesToLogs(req, res){
-  try{
+export async function getTotalAccountValue(req, res) {
+  try {
+    const { userId } = req.params;
+    let segments = [];
+
+    // account balance
+    const user = await sql`
+      SELECT * FROM users WHERE id = ${userId}::varchar
+    `
+
+    // total of savings
+    const userSavings = await sql`
+      SELECT * FROM savings WHERE user_id = ${userId}::varchar
+    `
+    let totalSavings = 0;
+    if(userSavings.length){
+      userSavings.map((save) => totalSavings += Number(save.deposited))
+      segments.push({
+        label: 'savings',
+        value: Number(totalSavings)
+      })
+    }
+
+    let total = Number(user[0].balance) + Number(totalSavings);
+    segments.push({
+      label: 'wallet',
+      value: Number(user[0].balance)
+    })
+
+    let percent_segments = []
+    segments.map((seg) => {
+      let temp = {
+        value: seg.value,
+        label: seg.label,
+        percent_of_all: (seg.value/total)*100
+      }
+      percent_segments.push(temp);
+    });
+
+    let out = {
+      total: total,
+      segments: percent_segments
+    }
+
+    console.log(out)
+    res.status(200).json(out);
+  } catch (e) {
+    console.log("Error in getTotalAccountValue: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+export async function saveUserTotalAcccountValueTologs(req, res){
+  try {
+    const users = await sql`
+      SELECT * FROM users
+    `;
+
+    for (const user of users) {
+      const id = crypto.randomUUID();
+      let total = 0;
+
+      //count total
+      total += Number(user.balance)
+      const userSavings = await sql`
+      SELECT * FROM savings WHERE user_id = ${user.id}::varchar
+      `
+      if(userSavings.length){
+        userSavings.map(save => {
+          total += Number(save.deposited);
+        });
+      }
+      //
+
+      const accountValueLog = await sql`
+        INSERT INTO account_value_logs (id, user_id, balance, created_at)
+        VALUES (${id}, ${user.id}, ${Number(
+        total
+      )}, ${new Date().valueOf()})
+      `;
+    }
+  } catch (e) {
+    console.log("Error in saveUserTotalAcccountValueTologs: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+export async function saveUserBalancesToLogs(req, res) {
+  try {
     const users = await sql`
       SELECT * FROM users
     `;
@@ -48,11 +136,12 @@ export async function saveUserBalancesToLogs(req, res){
       const id = crypto.randomUUID();
       const balanceLog = await sql`
         INSERT INTO balances_logs (id, user_id, balance, created_at)
-        VALUES (${id}, ${user.id}, ${Number(user.balance)}, ${new Date().valueOf()})
+        VALUES (${id}, ${user.id}, ${Number(
+        user.balance
+      )}, ${new Date().valueOf()})
       `;
     }
-  }
-  catch(e){
+  } catch (e) {
     console.log("Error in saveUserBalancesToLogs: ", e);
     res.status(500).json({ message: "Something went wrong." });
   }
@@ -120,19 +209,26 @@ export async function getUserOverview(req, res) {
 
     if (thisMonthTransactionsResult.length) {
       thisMonthTransactionsResult.map((operation) => {
-        if (operation.type == "expense" && operation.internal_operation == false)
+        if (
+          operation.type == "expense" &&
+          operation.internal_operation == false
+        )
           local_total.thisMonth.expense += Math.abs(operation.amount);
       });
     }
 
     if (lastMonthTransactionsResult.length) {
       lastMonthTransactionsResult.map((operation) => {
-        if (operation.type == "expense" && operation.internal_operation == false)
+        if (
+          operation.type == "expense" &&
+          operation.internal_operation == false
+        )
           local_total.lastMonth.expense += Math.abs(operation.amount);
       });
     }
 
-    const percentOfBdg = (local_total.thisMonth.expense / user.monthly_limit) * 100;
+    const percentOfBdg =
+      (local_total.thisMonth.expense / user.monthly_limit) * 100;
 
     let output = {
       user,

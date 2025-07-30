@@ -9,7 +9,7 @@ import savingsRoute from "./routes/savingsRoute.js";
 import recurringsRoute from "./routes/recurringsRoute.js";
 import balancesLogsRoute from "./routes/balancesLogsRoute.js";
 import cors from "cors";
-import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob } from "./config/cron.js";
+import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll } from "./config/cron.js";
 
 dotenv.config();
 
@@ -24,6 +24,7 @@ if (process.env.NODE_ENV === "production") {
   wakeupJob.start();
   checkUsersRecurrings.start();
   saveUsersWalletsBalances.start();
+  saveUsersAccountsValueAll.start();
 }
 
 const PORT = process.env.PORT || 5001;

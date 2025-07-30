@@ -21,6 +21,7 @@ app.use(express.json());
 
 // if(process.env.NODE_ENV === 'production') wakeupJob.start();
 wakeupJob.start();
+checkUsersRecurrings.start();
 
 const PORT = process.env.PORT || 5001;
 

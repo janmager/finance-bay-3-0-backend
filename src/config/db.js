@@ -4,8 +4,8 @@ import 'dotenv/config';
 // create a sql connection
 export const sql = neon(process.env.DATABASE_URL);
 
-export const API_URL = "http://localhost:5001";
-// export const API_URL = 'https://finance-bay-3-0-backend.onrender.com';
+// export const API_URL = "http://localhost:5001";
+export const API_URL = 'https://finance-bay-3-0-backend.onrender.com';
 
 export async function initDB(){
     try{

@@ -47,43 +47,42 @@ export async function getTotalAccountValue(req, res) {
     // account balance
     const user = await sql`
       SELECT * FROM users WHERE id = ${userId}::varchar
-    `
+    `;
 
     // total of savings
     const userSavings = await sql`
       SELECT * FROM savings WHERE user_id = ${userId}::varchar
-    `
+    `;
     let totalSavings = 0;
-    if(userSavings.length){
-      userSavings.map((save) => totalSavings += Number(save.deposited))
+    if (userSavings.length) {
+      userSavings.map((save) => (totalSavings += Number(save.deposited)));
       segments.push({
-        label: 'savings',
-        value: Number(totalSavings)
-      })
+        label: "savings",
+        value: Number(totalSavings),
+      });
     }
 
     let total = Number(user[0].balance) + Number(totalSavings);
     segments.push({
-      label: 'wallet',
-      value: Number(user[0].balance)
-    })
+      label: "wallet",
+      value: Number(user[0].balance),
+    });
 
-    let percent_segments = []
+    let percent_segments = [];
     segments.map((seg) => {
       let temp = {
         value: seg.value,
         label: seg.label,
-        percent_of_all: (seg.value/total)*100
-      }
+        percent_of_all: (seg.value / total) * 100,
+      };
       percent_segments.push(temp);
     });
 
     let out = {
       total: total,
-      segments: percent_segments
-    }
+      segments: percent_segments,
+    };
 
-    console.log(out)
     res.status(200).json(out);
   } catch (e) {
     console.log("Error in getTotalAccountValue: ", e);
@@ -91,7 +90,7 @@ export async function getTotalAccountValue(req, res) {
   }
 }
 
-export async function saveUserTotalAcccountValueTologs(req, res){
+export async function saveUserTotalAcccountValueTologs(req, res) {
   try {
     const users = await sql`
       SELECT * FROM users
@@ -99,12 +98,14 @@ export async function saveUserTotalAcccountValueTologs(req, res){
 
     for (const user of users) {
       const id = crypto.randomUUID();
-      let total = await fetch(`${API_URL}/api/users/totalAccountValue/${user.id}`);
-
+      let total = await fetch(
+        `${API_URL}/api/users/totalAccountValue/${user.id}`
+      );
+      const resp = await total.json();
       const accountValueLog = await sql`
-        INSERT INTO account_value_logs (id, user_id, value, created_at)
-        VALUES (${id}, ${user.id}, ${Number(
-        JSON.stringify(total)
+        INSERT INTO account_value_logs (id, user_id, value_json, created_at)
+        VALUES (${id}, ${user.id}, ${JSON.stringify(
+        resp
       )}, ${new Date().valueOf()})
       `;
     }

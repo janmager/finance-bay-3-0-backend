@@ -26,8 +26,8 @@ export const saveUsersWalletsBalances = new cron.CronJob("0 */30 * * * *", funct
   console.log("[CRON] saveUserBalancesToLogs successfully.");
 });
 
-// Every hour
-export const saveUsersAccountsValueAll = new cron.CronJob("*/1 * * * *", function async () {
+// Every 3 hours
+export const saveUsersAccountsValueAll = new cron.CronJob("0 */3 * * *", function async () {
   saveUserTotalAcccountValueTologs();
   console.log("[CRON] saveUserTotalAcccountValueTologs successfully.");
 });

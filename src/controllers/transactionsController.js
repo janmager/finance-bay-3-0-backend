@@ -15,6 +15,257 @@ export async function getTransactionByUserId(req, res) {
   }
 }
 
+export async function getUserDataCalendar(req, res) {
+  try {
+    const { userId } = req.params;
+
+    const transactions = await sql`
+            SELECT *
+            FROM transactions
+            WHERE user_id = ${userId}
+            ORDER BY created_at DESC
+    `;
+
+    const monthNames = [
+      "styczeń",
+      "luty",
+      "marzec",
+      "kwiecień",
+      "maj",
+      "czerwiec",
+      "lipiec",
+      "sierpień",
+      "wrzesień",
+      "październik",
+      "listopad",
+      "grudzień",
+    ];
+
+    const dayNames = [
+      "Niedziela",
+      "Poniedziałek",
+      "Wtorek",
+      "Środa",
+      "Czwartek",
+      "Piątek",
+      "Sobota",
+    ];
+
+    // Grupuj transakcje według miesięcy
+    const transactionsByMonth = {};
+
+    transactions.forEach((transaction) => {
+      // Parsuj timestamp jako liczbę
+      const timestamp = parseInt(transaction.created_at);
+      const date = new Date(timestamp);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+
+      if (!transactionsByMonth[monthKey]) {
+        transactionsByMonth[monthKey] = [];
+      }
+      transactionsByMonth[monthKey].push(transaction);
+    });
+
+    // Jeśli brak transakcji, dodaj aktualny miesiąc
+    if (Object.keys(transactionsByMonth).length === 0) {
+      const now = new Date();
+      const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
+      transactionsByMonth[currentMonthKey] = [];
+    }
+
+    let out = [];
+
+    // Przetwórz każdy miesiąc
+    Object.keys(transactionsByMonth).forEach((monthKey) => {
+      const [year, month] = monthKey.split("-").map(Number);
+      const monthTransactions = transactionsByMonth[monthKey];
+
+      // Grupuj transakcje według dni
+      const transactionsByDay = {};
+      monthTransactions.forEach((transaction) => {
+        const timestamp = parseInt(transaction.created_at);
+        const date = new Date(timestamp);
+        const day = date.getDate();
+
+        if (!transactionsByDay[day]) {
+          transactionsByDay[day] = [];
+        }
+        transactionsByDay[day].push(transaction);
+      });
+
+      // Utwórz kalendarz dla miesiąca
+      const firstDayOfMonth = new Date(year, month, 1);
+      const lastDayOfMonth = new Date(year, month + 1, 0);
+      const daysInMonth = lastDayOfMonth.getDate();
+
+      // Pierwszy dzień tygodnia (0 = niedziela, 1 = poniedziałek, itd.)
+      let firstDayWeekday = firstDayOfMonth.getDay();
+      // Konwertuj tak, żeby poniedziałek był pierwszym dniem (0)
+      firstDayWeekday = firstDayWeekday === 0 ? 6 : firstDayWeekday - 1;
+
+      const weeks = [];
+      let currentWeek = [];
+
+      // Aktualny dzień dla porównania
+      const today = new Date();
+      const todayDateString = today.toDateString();
+
+      // Oblicz dni z poprzedniego miesiąca na początku pierwszego tygodnia
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevYear = month === 0 ? year - 1 : year;
+      const lastDayOfPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
+
+      // Dodaj dni z poprzedniego miesiąca na początku pierwszego tygodnia
+      for (let i = firstDayWeekday - 1; i >= 0; i--) {
+        const prevDay = lastDayOfPrevMonth - i;
+        const prevDate = new Date(prevYear, prevMonth, prevDay);
+        let prevDayWeekday = prevDate.getDay();
+        prevDayWeekday = prevDayWeekday === 0 ? 6 : prevDayWeekday - 1;
+
+        // Sprawdź czy dzień jest w przeszłości czy przyszłości
+        const isPast =
+          prevDate < today && prevDate.toDateString() !== todayDateString;
+
+        const prevDayObj = {
+          num: prevDay,
+          dayNum: prevDayWeekday + 1,
+          dayLabel: dayNames[prevDate.getDay()],
+          total_balance_this_day: isPast ? 0 : null, // 0 dla przeszłości, null dla przyszłości
+          previous_month: true,
+          monthDay: prevDay,
+          monthNum: prevMonth + 1,
+          year: prevYear,
+          transactions: [],
+        };
+
+        currentWeek.push(prevDayObj);
+      }
+
+      // Dodaj wszystkie dni aktualnego miesiąca
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        let dayWeekday = date.getDay();
+        // Konwertuj tak, żeby poniedziałek był pierwszym dniem (0)
+        dayWeekday = dayWeekday === 0 ? 6 : dayWeekday - 1;
+
+        // Oblicz sumę transakcji dla tego dnia
+        const dayTransactions = transactionsByDay[day] || [];
+        let totalBalance = null;
+
+        if (dayTransactions.length > 0) {
+          totalBalance = dayTransactions.reduce((sum, transaction) => {
+            const amount = parseFloat(transaction.amount);
+            if (transaction.type === "income") {
+              return sum + Math.abs(amount); // income zawsze dodatni
+            } else if (transaction.type === "expense") {
+              return sum - Math.abs(amount); // expense zawsze ujemny
+            }
+            return sum;
+          }, 0);
+          totalBalance = Math.round(totalBalance * 100) / 100; // Zaokrąglij do 2 miejsc po przecinku
+        } else {
+          // Jeśli brak transakcji, sprawdź czy dzień jest w przeszłości czy przyszłości
+          const isPast =
+            date < today && date.toDateString() !== todayDateString;
+          totalBalance = isPast ? 0 : null;
+        }
+
+        const dayObj = {
+          num: day,
+          dayNum: dayWeekday + 1, // 1-7 (poniedziałek-niedziela)
+          dayLabel: dayNames[date.getDay()], // Użyj getDay() bezpośrednio
+          total_balance_this_day: totalBalance,
+          previous_month: false,
+          monthDay: day,
+          monthNum: month + 1,
+          year: year,
+          transactions: dayTransactions,
+        };
+
+        currentWeek.push(dayObj);
+
+        // Jeśli to niedziela, zakończ tydzień
+        if (dayWeekday === 6) {
+          weeks.push(currentWeek);
+          currentWeek = [];
+        }
+      }
+
+      // Jeśli ostatni tydzień nie jest pełny, dodaj dni z następnego miesiąca
+      if (currentWeek.length > 0) {
+        const nextMonth = month === 11 ? 0 : month + 1;
+        const nextYear = month === 11 ? year + 1 : year;
+        let nextDay = 1;
+
+        while (currentWeek.length < 7) {
+          const nextDate = new Date(nextYear, nextMonth, nextDay);
+          let nextDayWeekday = nextDate.getDay();
+          nextDayWeekday = nextDayWeekday === 0 ? 6 : nextDayWeekday - 1;
+
+          // Sprawdź czy dzień jest w przeszłości czy przyszłości
+          const isPast =
+            nextDate < today && nextDate.toDateString() !== todayDateString;
+
+          const nextDayObj = {
+            num: nextDay,
+            dayNum: nextDayWeekday + 1,
+            dayLabel: dayNames[nextDate.getDay()],
+            total_balance_this_day: isPast ? 0 : null, // 0 dla przeszłości, null dla przyszłości
+            previous_month: true,
+            monthDay: nextDay,
+            monthNum: nextMonth + 1,
+            year: nextYear,
+            transactions: [],
+          };
+
+          currentWeek.push(nextDayObj);
+          nextDay++;
+        }
+        weeks.push(currentWeek);
+      }
+
+      const monthObj = {
+        monthLabel: monthNames[month],
+        monthNum: month + 1,
+        year: year,
+        weeks: weeks,
+      };
+
+      out.push(monthObj);
+    });
+
+    // Sortuj według roku i miesiąca (najnowsze pierwsze)
+    out.sort((a, b) => {
+      // Znajdź rok dla każdego miesiąca
+      const yearA =
+        Object.keys(transactionsByMonth)
+          .find((key) => {
+            const [year, month] = key.split("-").map(Number);
+            return month + 1 === a.monthNum;
+          })
+          ?.split("-")[0] || new Date().getFullYear();
+
+      const yearB =
+        Object.keys(transactionsByMonth)
+          .find((key) => {
+            const [year, month] = key.split("-").map(Number);
+            return month + 1 === b.monthNum;
+          })
+          ?.split("-")[0] || new Date().getFullYear();
+
+      if (yearA !== yearB) {
+        return yearB - yearA;
+      }
+      return b.monthNum - a.monthNum;
+    });
+
+    res.status(200).json(out);
+  } catch (e) {
+    console.log("Error getUserDataCalendar: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
 export async function getTransactionDailyGroupedByUserId(req, res) {
   try {
     const { userId } = req.params;
@@ -201,7 +452,7 @@ export async function getUserMostCategoriesStats(req, res) {
     let previous_month_category_stats = {};
     let total_expense = 0;
     let total_income = 0;
-    let name = ""
+    let name = "";
 
     const parseStats = (transactions, outputObj) => {
       transactions.forEach((transaction) => {

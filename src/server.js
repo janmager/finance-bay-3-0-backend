@@ -7,6 +7,7 @@ import usersRoute from "./routes/usersRoute.js";
 import cronsRoute from "./routes/cronsRoute.js";
 import savingsRoute from "./routes/savingsRoute.js";
 import recurringsRoute from "./routes/recurringsRoute.js";
+import balancesLogsRoute from "./routes/balancesLogsRoute.js";
 import cors from "cors";
 import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob } from "./config/cron.js";
 
@@ -32,6 +33,7 @@ app.use("/api/crons", cronsRoute);
 app.use("/api/users", usersRoute);
 app.use("/api/savings", savingsRoute);
 app.use("/api/recurrings", recurringsRoute);
+app.use("/api/balances-logs", balancesLogsRoute);
 
 app.get("/api/health", (req, res) => {
   res.send("API is working fine.");

@@ -17,7 +17,7 @@ export async function createUser(req, res) {
     const if_is = await sql`
             SELECT * FROM users WHERE id = ${user_id} OR email = ${email}
         `;
-
+        
     if (if_is.length > 0) {
       if (if_is[0].username == "") {
         const init_username = await sql`
@@ -28,10 +28,9 @@ export async function createUser(req, res) {
     }
 
     const users = await sql`
-        INSERT INTO users (id, email, username, monthly_limit, avatar, balance) 
-        VALUES (${user_id}, ${email}, ${username ?? ""}, 3000, ${avatar}, 0)
-            RETURNING *``
-        `;
+        INSERT INTO users (id, email, username, monthly_limit, avatar, currency, balance) 
+        VALUES (${user_id}, ${email}, ${username ?? ""}, 3000, ${avatar}, 'pln', 0)
+            RETURNING *`;
     res.status(201).json({ data: users[0] });
   } catch (e) {
     console.log("Error creating user: ", e);
@@ -43,8 +42,6 @@ export async function updateUserBalance(req, res) {
   try {
     const { new_balance } = req.body;
     const { userId } = req.params;
-
-    console.log(new_balance, userId)
 
     if (!userId || !new_balance) {
       return res.status(400).json({ message: "All fields are required." });

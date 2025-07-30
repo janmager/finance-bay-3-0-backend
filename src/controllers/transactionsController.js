@@ -201,12 +201,15 @@ export async function getUserMostCategoriesStats(req, res) {
     let previous_month_category_stats = {};
     let total_expense = 0;
     let total_income = 0;
+    let name = ""
 
     const parseStats = (transactions, outputObj) => {
       transactions.forEach((transaction) => {
         const { category, amount, type, internal_operation } = transaction;
+        name = category;
         outputObj[category] = {
           type: type,
+          name: name,
           ...(type == "expense" &&
             internal_operation == false && {
               percentage_of_total_expenses: null,
@@ -411,7 +414,6 @@ export async function returnTransaction(req, res) {
     const { userId } = req.params;
     const { transaction_id } = req.body;
 
-    console.log(transaction_id);
     const delTransaction = await sql`
             DELETE FROM transactions WHERE id = ${transaction_id} RETURNING *
         `;
@@ -421,7 +423,6 @@ export async function returnTransaction(req, res) {
                   -1 * Number(delTransaction[0].amount)
                 } WHERE id = ${userId}
              RETURNING *`;
-      console.log(updateBalanace);
 
       if (updateBalanace.length) {
         res.status(200).json(delTransaction[0]);

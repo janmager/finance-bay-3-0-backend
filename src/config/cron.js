@@ -11,7 +11,17 @@ export const wakeupJob = new cron.CronJob("*/14 * * * *", function () {
     .on("error", (e) => console.error("Error while sending request", e));
 });
 
-
+export const checkUsersRecurrings = new cron.CronJob("*/3 * * * *", function async () {
+  https
+    .get(process.env.API_URL+'/api/crons/check-all-recurrings-for-users', async(res) => {
+      if (res.statusCode === 200){
+        const data = await res.json();
+        console.log(data)
+      }
+      else console.log("GET request failed", res.statusCode);
+    })
+    .on("error", (e) => console.error("Error while sending request", e));
+});
 
 
 

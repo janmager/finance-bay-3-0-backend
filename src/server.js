@@ -8,7 +8,7 @@ import cronsRoute from "./routes/cronsRoute.js";
 import savingsRoute from "./routes/savingsRoute.js";
 import recurringsRoute from "./routes/recurringsRoute.js";
 import cors from "cors";
-import { wakeupJob } from "./config/cron.js";
+import { checkUsersRecurrings, wakeupJob } from "./config/cron.js";
 
 dotenv.config();
 

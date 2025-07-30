@@ -1,4 +1,4 @@
-import { sql } from "../config/db.js";
+import { API_URL, sql } from "../config/db.js";
 
 export async function createUser(req, res) {
   try {
@@ -99,19 +99,8 @@ export async function saveUserTotalAcccountValueTologs(req, res){
 
     for (const user of users) {
       const id = crypto.randomUUID();
-      let total = 0;
-
-      //count total
-      total += Number(user.balance)
-      const userSavings = await sql`
-      SELECT * FROM savings WHERE user_id = ${user.id}::varchar
-      `
-      if(userSavings.length){
-        userSavings.map(save => {
-          total += Number(save.deposited);
-        });
-      }
-      //
+      let total = await fetch(`${API_URL}/api/users/totalAccountValue`);
+      let totalResult = await total.json();
 
       const accountValueLog = await sql`
         INSERT INTO account_value_logs (id, user_id, value, created_at)

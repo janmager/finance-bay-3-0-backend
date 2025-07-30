@@ -1,5 +1,6 @@
 import cron from "cron";
 import https from "https";
+import { checkAllUsersForRecurrings } from "../controllers/recurringsController";
 
 // for active state render server (going to sleep after 15min of disactive)
 export const wakeupJob = new cron.CronJob("*/14 * * * *", function () {
@@ -12,15 +13,8 @@ export const wakeupJob = new cron.CronJob("*/14 * * * *", function () {
 });
 
 export const checkUsersRecurrings = new cron.CronJob("*/2 * * * *", function async () {
-  https
-    .get(process.env.API_URL+'/api/crons/check-all-recurrings-for-users', async(res) => {
-      if (res.statusCode === 200){
-        const data = await res.json();
-        console.log(data)
-      }
-      else console.log("GET request failed", res.statusCode);
-    })
-    .on("error", (e) => console.error("Error while sending request", e));
+  console.log(process.env.API_URL+'/api/crons/check-all-recurrings-for-users')
+  checkAllUsersForRecurrings();
 });
 
 

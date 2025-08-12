@@ -1,4 +1,5 @@
 import { sql } from "../config/db.js";
+import crypto from "crypto";
 
 export async function getTransactionByUserId(req, res) {
   try {
@@ -594,6 +595,21 @@ export async function createTransaction(req, res) {
       await sql`
                 UPDATE users SET balance = balance + ${transactionAmount} WHERE id = ${user_id}
             `;
+
+      // Log the balance update to balances_logs
+      const user = await sql`
+    SELECT balance FROM users WHERE id = ${user_id}
+  `;
+
+      if (user.length > 0) {
+        const logId = crypto.randomUUID();
+        await sql`
+      INSERT INTO balances_logs (id, user_id, balance, created_at)
+      VALUES (${logId}, ${user_id}, ${Number(
+          user[0].balance
+        )}, ${new Date().valueOf()})
+    `;
+      }
     }
 
     res.status(201).json(transaction[0]);
@@ -610,16 +626,32 @@ export async function deleteTransaction(req, res) {
             DELETE FROM transactions WHERE id = ${id} RETURNING *
         `;
 
-    if (result.count === 0) {
+    if (result.length === 0) {
       return res.status(404).json({ message: "Transaction not found." });
     }
 
     const deletedTransaction = result[0];
     const { user_id, amount } = deletedTransaction;
 
+    // Correctly update balance: if amount is positive (income), subtract it; if negative (expense), add it back
     await sql`
             UPDATE users SET balance = balance - ${amount} WHERE id = ${user_id}
         `;
+
+    // Log the balance update to balances_logs
+    const user = await sql`
+      SELECT balance FROM users WHERE id = ${user_id}
+    `;
+
+    if (user.length > 0) {
+      const logId = crypto.randomUUID();
+      await sql`
+        INSERT INTO balances_logs (id, user_id, balance, created_at)
+        VALUES (${logId}, ${user_id}, ${Number(
+        user[0].balance
+      )}, ${new Date().valueOf()})
+      `;
+    }
 
     res.status(200).json({ message: "Transaction deleted successfully." });
   } catch (e) {
@@ -676,6 +708,15 @@ export async function returnTransaction(req, res) {
              RETURNING *`;
 
       if (updateBalanace.length) {
+        // Log the balance update to balances_logs
+        const logId = crypto.randomUUID();
+        await sql`
+          INSERT INTO balances_logs (id, user_id, balance, created_at)
+          VALUES (${logId}, ${userId}, ${Number(
+          updateBalanace[0].balance
+        )}, ${new Date().valueOf()})
+        `;
+
         res.status(200).json(delTransaction[0]);
       } else throw "err";
     } else throw "err";

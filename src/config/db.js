@@ -18,6 +18,15 @@ export async function initDB(){
             created_at VARCHAR(255) NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`;
 
+        await sql`CREATE TABLE IF NOT EXISTS incoming_payments (
+            id VARCHAR(1000) PRIMARY KEY,
+            title TEXT,
+            description TEXT,
+            deadline TEXT,
+            amount DECIMAL,
+            user_id TEXT
+        )`;
+
         console.log("Database initialized successfully.")
     }
     catch(e){

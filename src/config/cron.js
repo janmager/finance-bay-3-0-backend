@@ -20,14 +20,14 @@ export const checkUsersRecurrings = new cron.CronJob("0 0 */6 * * *", function a
   console.log("[CRON] checkUsersRecurrings successfully.");
 });
 
-// Every 30 minutes
-export const saveUsersWalletsBalances = new cron.CronJob("0 */30 * * * *", function async () {
+// Every 6 hours
+export const saveUsersWalletsBalances = new cron.CronJob("0 0 */6 * * *", function async () {
   saveUserBalancesToLogs();
   console.log("[CRON] saveUserBalancesToLogs successfully.");
 });
 
-// Every 3 hours
-export const saveUsersAccountsValueAll = new cron.CronJob("0 */3 * * *", function async () {
+// Every 3am
+export const saveUsersAccountsValueAll = new cron.CronJob("0 0 3 * * *", function async () {
   saveUserTotalAcccountValueTologs();
   console.log("[CRON] saveUserTotalAcccountValueTologs successfully.");
 });

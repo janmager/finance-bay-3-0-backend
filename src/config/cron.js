@@ -49,8 +49,8 @@ export const saveUsersAccountsValueAll = new cron.CronJob("0 0 0 * * *", functio
   console.log(`[CRON] ${timeString} saveUsersAccountsValueAll successfully.`);
 });
 
-// Every day at 00:00:05 (5 seconds after midnight)
-export const checkUsersIncomingPayments = new cron.CronJob("5 0 0 * * *", function async () {
+// Every day at 00:00
+export const checkUsersIncomingPayments = new cron.CronJob("0 0 0 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
   const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;

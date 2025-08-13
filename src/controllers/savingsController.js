@@ -52,10 +52,10 @@ export async function createSaving(req, res) {
 }
 
 export async function deleteSaving(req, res) {
-  const { id } = req.params;
+  const { id, userId } = req.params;
   try {
     const result = await sql`
-            DELETE FROM savings WHERE id = ${id} RETURNING *
+            DELETE FROM savings WHERE id = ${id} AND user_id = ${userId} RETURNING *
         `;
     res.status(200).json({ message: "Saving deleted successfully." });
   } catch (e) {

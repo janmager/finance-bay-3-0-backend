@@ -36,10 +36,10 @@ export async function getRecurrings(req, res) {
 
 export async function deleteRecurring(req, res) {
   try {
-    const { recurringId } = req.params;
+    const { recurringId, userId } = req.params;
 
     const result = await sql`
-            DELETE FROM recurrings WHERE id = ${recurringId} RETURNING *
+            DELETE FROM recurrings WHERE id = ${recurringId} AND user_id = ${userId} RETURNING *
         `;
     res.status(200).json({ message: "Recurring deleted successfully." });
   } catch (e) {

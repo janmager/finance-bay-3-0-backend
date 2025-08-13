@@ -46,7 +46,7 @@ export const saveUsersAccountsValueAll = new cron.CronJob("0 0 3 * * *", functio
 });
 
 // Every 3am
-export const checkUsersIncomingPayments = new cron.CronJob("0 0 17 5 * *", function async () {
+export const checkUsersIncomingPayments = new cron.CronJob("0 0 17 17 * *", function async () {
   const now = new Date();
   const timeString = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} ${now.getDate().toString().padStart(2, '0')}.${(now.getMonth() + 1).toString().padStart(2, '0')}.${now.getFullYear()}]`;
   

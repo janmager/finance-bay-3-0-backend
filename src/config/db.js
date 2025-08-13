@@ -24,7 +24,8 @@ export async function initDB(){
             description TEXT,
             deadline TEXT,
             amount DECIMAL,
-            user_id TEXT
+            user_id TEXT,
+            auto_settle BOOLEAN DEFAULT false
         )`;
 
         console.log("Database initialized successfully.")

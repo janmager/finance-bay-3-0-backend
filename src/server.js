@@ -11,7 +11,7 @@ import balancesLogsRoute from "./routes/balancesLogsRoute.js";
 import accountLogsRoute from "./routes/accountLogsRoute.js";
 import incomingPaymentsRoute from "./routes/incomingPaymentsRoute.js";
 import cors from "cors";
-import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll } from "./config/cron.js";
+import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll, checkUsersIncomingPayments } from "./config/cron.js";
 
 dotenv.config();
 
@@ -27,6 +27,7 @@ if (process.env.NODE_ENV === "production") {
   checkUsersRecurrings.start();
   saveUsersWalletsBalances.start();
   saveUsersAccountsValueAll.start();
+  checkUsersIncomingPayments.start();
 }
 
 const PORT = process.env.PORT || 5001;

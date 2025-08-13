@@ -156,6 +156,46 @@ export async function updateUserBalance(req, res) {
   }
 }
 
+export async function updateUserMonthlyLimit(req, res) {
+  try {
+    const { new_monthly_limit } = req.body;
+    const { userId } = req.params;
+
+    if (!userId || !new_monthly_limit) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const upd = await sql`
+        UPDATE users SET monthly_limit = ${new_monthly_limit} WHERE id = ${userId} RETURNING *
+    `;
+
+    res.status(200).json(upd[0]);
+  } catch (e) {
+    console.log("Error updating user monthly limit: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+export async function updateUserUsername(req, res) {
+  try {
+    const { username } = req.body;
+    const { userId } = req.params;
+
+    if (!userId || !username) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const upd = await sql`
+        UPDATE users SET username = ${username} WHERE id = ${userId} RETURNING *
+    `;
+
+    res.status(200).json(upd[0]);
+  } catch (e) {
+    console.log("Error updating user username: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
 export async function getUserOverview(req, res) {
   const { userId } = req.params;
 

@@ -20,6 +20,9 @@ export const wakeupJob = new cron.CronJob("*/14 * * * *", function () {
 });
 
 // At 0 minutes past the hour, every 6 hours
+// Wykonuje się co 6 godzin w czasie GMT+2
+// Serwer GMT+0: 0:00, 6:00, 12:00, 18:00
+// Klient GMT+2: 2:00, 8:00, 14:00, 20:00
 export const checkUsersRecurrings = new cron.CronJob("0 0 */6 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
@@ -30,6 +33,9 @@ export const checkUsersRecurrings = new cron.CronJob("0 0 */6 * * *", function a
 });
 
 // Every 6 hours
+// Wykonuje się co 6 godzin w czasie GMT+2
+// Serwer GMT+0: 0:00, 6:00, 12:00, 18:00
+// Klient GMT+2: 2:00, 8:00, 14:00, 20:00
 export const saveUsersWalletsBalances = new cron.CronJob("0 0 */6 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
@@ -39,8 +45,11 @@ export const saveUsersWalletsBalances = new cron.CronJob("0 0 */6 * * *", functi
   console.log(`[CRON] ${timeString} saveUsersWalletsBalances successfully.`);
 });
 
-// Every 00:00
-export const saveUsersAccountsValueAll = new cron.CronJob("0 0 0 * * *", function async () {
+// Every 00:00 GMT+2 (22:00 GMT+0)
+// Wykonuje się o 00:00 w czasie GMT+2
+// Serwer GMT+0: 22:00 (poprzedniego dnia)
+// Klient GMT+2: 00:00 (aktualnego dnia)
+export const saveUsersAccountsValueAll = new cron.CronJob("0 0 22 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
   const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${now.getFullYear()}]`;
@@ -49,8 +58,11 @@ export const saveUsersAccountsValueAll = new cron.CronJob("0 0 0 * * *", functio
   console.log(`[CRON] ${timeString} saveUsersAccountsValueAll successfully.`);
 });
 
-// Every day at 00:00
-export const checkUsersIncomingPayments = new cron.CronJob("0 0 0 * * *", function async () {
+// Every day at 00:00 GMT+2 (22:00 GMT+0)
+// Wykonuje się o 00:00 w czasie GMT+2
+// Serwer GMT+0: 22:00 (poprzedniego dnia)
+// Klient GMT+2: 00:00 (aktualnego dnia)
+export const checkUsersIncomingPayments = new cron.CronJob("0 0 22 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
   const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;

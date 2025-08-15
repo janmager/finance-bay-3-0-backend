@@ -22,11 +22,11 @@ const upload = multer({
 
 // POST /api/ai - Process AI request with text and image
 // Accept any field name for the image file
-router.post('/', (req, res, next) => {
+router.post('/', upload.any(), (req, res, next) => {
   console.log('Request headers:', req.headers);
   console.log('Request body:', req.body);
   console.log('Request files:', req.files);
   next();
-}, upload.any(), processAIRequest);
+}, processAIRequest);
 
 export default router;

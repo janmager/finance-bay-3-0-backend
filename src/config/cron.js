@@ -2,6 +2,7 @@ import cron from "cron";
 import https from "https";
 import { checkAllUsersForRecurrings } from "../controllers/recurringsController.js";
 import { checkAllUsersForIncomingPayments } from "../controllers/incomingPaymentsController.js";
+import { checkAllUsersForIncomingIncomes } from "../controllers/incomingIncomesController.js";
 import { API_URL } from "./db.js";
 import { saveUserBalancesToLogs, saveUserTotalAcccountValueTologs } from "../controllers/usersController.js";
 
@@ -65,9 +66,21 @@ export const saveUsersAccountsValueAll = new cron.CronJob("0 0 22 * * *", functi
 export const checkUsersIncomingPayments = new cron.CronJob("0 0 22 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
-  const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;
+  const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${gmtPlus2.getMonth() + 1}.${gmtPlus2.getFullYear()}]`;
   
   checkAllUsersForIncomingPayments();
   console.log(`[CRON] ${timeString} checkUsersIncomingPayments successfully.`);
 });
 
+// Every day at 00:00 GMT+2 (22:00 GMT+0)
+// Wykonuje się o 00:00 w czasie GMT+2
+// Serwer GMT+0: 22:00 (poprzedniego dnia)
+// Klient GMT+2: 00:00 (aktualnego dnia)
+export const checkUsersIncomingIncomes = new cron.CronJob("0 0 22 * * *", function async () {
+  const now = new Date();
+  const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
+  const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;
+  
+  checkAllUsersForIncomingIncomes();
+  console.log(`[CRON] ${timeString} checkUsersIncomingIncomes successfully.`);
+});

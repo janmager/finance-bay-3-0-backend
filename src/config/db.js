@@ -28,6 +28,17 @@ export async function initDB(){
             auto_settle BOOLEAN DEFAULT false
         )`;
 
+        await sql`CREATE TABLE IF NOT EXISTS incoming_incomes (
+            id TEXT PRIMARY KEY,
+            title TEXT,
+            user_id TEXT,
+            description TEXT,
+            deadline TEXT,
+            amount NUMERIC,
+            created_at TEXT,
+            auto_settle BOOLEAN DEFAULT false
+        )`;
+
         console.log("Database initialized successfully.")
     }
     catch(e){

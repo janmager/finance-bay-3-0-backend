@@ -23,7 +23,9 @@ app.use(cors());
 app.use(rateLimiter);
 app.use(express.json());
 
-if (process.env.NODE_ENV === "production") {
+let test = false;
+
+if (process.env.NODE_ENV === "production" || test) {
   wakeupJob.start();
   checkUsersRecurrings.start();
   saveUsersWalletsBalances.start();

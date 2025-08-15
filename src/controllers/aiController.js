@@ -10,7 +10,9 @@ const openai = new OpenAI({
 export const processAIRequest = async (req, res) => {
   try {
     const { text } = req.body;
-    const imageFile = req.file;
+    
+    // Find the first image file in req.files
+    const imageFile = req.files && req.files.length > 0 ? req.files[0] : null;
 
     if (!text) {
       return res.status(400).json({ error: 'Text content is required' });
@@ -18,6 +20,11 @@ export const processAIRequest = async (req, res) => {
 
     if (!imageFile) {
       return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    // Verify it's an image file
+    if (!imageFile.mimetype.startsWith('image/')) {
+      return res.status(400).json({ error: 'Only image files are allowed' });
     }
 
     // Convert image buffer to base64

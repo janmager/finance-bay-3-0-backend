@@ -85,7 +85,7 @@ export async function settleIncomingPayment(req, res) {
         user_id: userId,
         title: payment.title,
         amount: payment.amount,
-        category: "incoming-payment",
+        category: "incoming-payments",
         note: `Rozliczenie płatności: ${payment.description || payment.title}`,
         transaction_type: "expense",
         internal_operation: false,
@@ -131,8 +131,8 @@ export async function checkAllUsersForIncomingPayments() {
 
       for (const payment of incomingPayments) {
         const today = new Date();
-        const deadline = new Date(payment.deadline);
-        
+        console.log(payment.deadline)
+        const deadline = new Date(Number(payment.deadline));
         // Check if today is >= deadline
         if (today >= deadline) {
           // Create transaction for the incoming payment
@@ -145,7 +145,7 @@ export async function checkAllUsersForIncomingPayments() {
               user_id: user.id,
               title: payment.title,
               amount: payment.amount,
-              category: "incoming-payment",
+              category: "incoming-payments",
               note: `Automatyczne rozliczenie: ${payment.description || payment.title}`,
               transaction_type: "expense",
               internal_operation: false,

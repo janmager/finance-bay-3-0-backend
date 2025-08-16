@@ -24,6 +24,19 @@ export const processAIRequest = async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
+    // Check if user exists and has premium access
+    const userCheck = await sql`
+      SELECT premium FROM users WHERE id = ${user_id}
+    `;
+
+    if (userCheck.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!userCheck[0].premium) {
+      return res.status(403).json({ error: 'Premium access required' });
+    }
+
     // Verify it's an image file
     if (!imageFile.mimetype.startsWith('image/')) {
       return res.status(400).json({ error: 'Only image files are allowed' });
@@ -66,6 +79,8 @@ Odpowiedź chcę otrzymać w formacie JSON z następującą strukturą:
   "percent_description": 60,
   "percent_created_at": 90
 }
+
+Dla parametru category masz dostępne kategorie: food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other.
 
 Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawierają informacje jak bardzo jesteś pewny/zgodny co do poprawności zaczytania wartości z grafiki. Jeśli nie jesteś czegoś pewien/nie masz takich danych ustaw wartość parametru na null, a wartości procentowe na 0.`;
     }

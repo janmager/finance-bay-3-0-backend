@@ -39,6 +39,14 @@ export async function initDB(){
             auto_settle BOOLEAN DEFAULT false
         )`;
 
+        await sql`CREATE TABLE IF NOT EXISTS ai_logs (
+            id TEXT PRIMARY KEY,
+            response TEXT,
+            user_id TEXT,
+            url TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )`;
+
         console.log("Database initialized successfully.")
     }
     catch(e){

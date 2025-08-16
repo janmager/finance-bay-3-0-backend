@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { createTransaction } from '../controllers/transactionsController.js';
+import { addAILog } from './aiLogsController.js';
 
 dotenv.config();
 
@@ -104,6 +105,35 @@ Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawieraj�
     const aiResponse = response.choices[0].message.content;
     
     console.log(`OpenAI Response: (typeof ${typeof aiResponse}) (usage: ${response.usage.total_tokens} tokens)`, aiResponse);
+
+    // Log the AI response to the database
+    try {
+      const logPayload = {
+        response: aiResponse,
+        user_id: user_id,
+        url: '/api/ai'
+      };
+      
+      // Create a mock request and response for logging
+      const mockLogReq = { body: logPayload };
+      const mockLogRes = {
+        status: (code) => ({
+          json: (data) => {
+            if (code === 201) {
+              console.log('AI log saved successfully:', data);
+            }
+          }
+        }),
+        json: (data) => {
+          console.log('AI log save failed:', data);
+        }
+      };
+      
+      await addAILog(mockLogReq, mockLogRes);
+    } catch (logError) {
+      console.log('Error saving AI log:', logError);
+      // Don't fail the main request if logging fails
+    }
 
     // Check if AI response is valid
     if (!aiResponse) {

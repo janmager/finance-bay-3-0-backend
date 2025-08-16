@@ -22,7 +22,8 @@
     "https": "^1.0.0",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
-    "openai": "^5.12.2"
+    "openai": "^5.12.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

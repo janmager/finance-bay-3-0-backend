@@ -12,6 +12,7 @@ import accountLogsRoute from "./routes/accountLogsRoute.js";
 import incomingPaymentsRoute from "./routes/incomingPaymentsRoute.js";
 import incomingIncomesRoute from "./routes/incomingIncomesRoute.js";
 import aiRoute from "./routes/aiRoute.js";
+import aiLogsRoute from "./routes/aiLogsRoute.js";
 import cors from "cors";
 import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll, checkUsersIncomingPayments, checkUsersIncomingIncomes } from "./config/cron.js";
 
@@ -47,6 +48,7 @@ app.use("/api/account-logs", accountLogsRoute);
 app.use("/api/incoming-payments", incomingPaymentsRoute);
 app.use("/api/incoming-incomes", incomingIncomesRoute);
 app.use("/api/ai", aiRoute);
+app.use("/api/ai-logs", aiLogsRoute);
 
 app.get("/api/health", (req, res) => {
   res.send("API is working fine.");

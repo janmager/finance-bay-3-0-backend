@@ -59,58 +59,56 @@ router.post('/webhook', async (req, res) => {
             }
         }
         
-        // Sprawdź czy to jest webhook z wiadomością
-        if (req.body.Payload && req.body.webhook) {
-            try {
-                // Parsuj dane z Payload
-                const webhookData = JSON.parse(req.body.Payload);
-                console.log('🔍 Parsed webhook data:', JSON.stringify(webhookData, null, 2));
-                
-                if (webhookData.webhook && webhookData.webhook.parameters) {
-                    const params = webhookData.webhook.parameters;
-                    incomingMessage = params.Body;
-                    fromNumber = params.From;
-                    
-                    console.log('✅ Wyciągnięto dane z webhook:', { Body: incomingMessage, From: fromNumber });
-                } else {
-                    console.error('❌ Nieprawidłowa struktura webhook data');
-                    return res.status(400).json({ error: 'Invalid webhook structure' });
-                }
-            } catch (parseError) {
-                console.error('❌ Błąd parsowania JSON z Payload:', parseError);
-                return res.status(400).json({ error: 'Invalid JSON in Payload' });
-            }
-        } else if (req.body.Payload) {
-            // Sprawdź czy Payload zawiera dane wiadomości
+        // Sprawdź czy to jest webhook z błędem w Payload (dla różnych formatów)
+        if (req.body.Payload) {
             try {
                 const payloadData = JSON.parse(req.body.Payload);
-                console.log('🔍 Parsed payload data:', JSON.stringify(payloadData, null, 2));
                 
-                // Sprawdź różne możliwe struktury
-                if (payloadData.webhook && payloadData.webhook.parameters) {
-                    const params = payloadData.webhook.parameters;
-                    incomingMessage = params.Body;
-                    fromNumber = params.From;
+                // Sprawdź czy to jest webhook z błędem
+                if (payloadData.error_code) {
+                    console.log('⚠️ Otrzymano webhook z błędem w Payload:', payloadData.error_code);
+                    console.log('⚠️ Szczegóły błędu:', payloadData.more_info);
+                    console.log('⚠️ Ignoruję webhook z błędem - nie przetwarzam');
+                    return res.status(200).send('OK - Error webhook in Payload ignored');
+                }
+                
+                // Sprawdź czy to jest webhook z wiadomością
+                if (payloadData.webhook) {
+                    console.log('🔍 Typ webhooka: PAYLOAD JSON (z wiadomością)');
+                    
+                    if (payloadData.webhook.parameters) {
+                        const params = payloadData.webhook.parameters;
+                        incomingMessage = params.Body;
+                        fromNumber = params.From;
+                        console.log('✅ Wyciągnięto dane z webhook.parameters:', { Body: incomingMessage, From: fromNumber });
+                    } else if (payloadData.webhook.request && payloadData.webhook.request.parameters) {
+                        const params = payloadData.webhook.request.parameters;
+                        incomingMessage = params.Body;
+                        fromNumber = params.From;
+                        console.log('✅ Wyciągnięto dane z webhook.request.parameters:', { Body: incomingMessage, From: fromNumber });
+                    } else {
+                        console.error('❌ Nieprawidłowa struktura webhook data');
+                        return res.status(400).json({ error: 'Invalid webhook structure' });
+                    }
                 } else if (payloadData.Body && payloadData.From) {
+                    // Sprawdź czy to są dane wiadomości bezpośrednio w Payload
                     incomingMessage = payloadData.Body;
                     fromNumber = payloadData.From;
-                } else if (payloadData.webhook && payloadData.webhook.request && payloadData.webhook.request.parameters) {
-                    const params = payloadData.webhook.request.parameters;
-                    incomingMessage = params.Body;
-                    fromNumber = params.From;
+                    console.log('✅ Wyciągnięto dane bezpośrednio z Payload:', { Body: incomingMessage, From: fromNumber });
                 } else {
+                    // Jeśli nie rozpoznano struktury, zwróć błąd
                     console.error('❌ Nieznana struktura Payload');
                     console.error('❌ Payload:', req.body.Payload);
                     return res.status(400).json({ error: 'Unknown Payload structure' });
                 }
                 
-                console.log('✅ Wyciągnięto dane z Payload:', { Body: incomingMessage, From: fromNumber });
             } catch (parseError) {
                 console.error('❌ Błąd parsowania JSON z Payload:', parseError);
                 return res.status(400).json({ error: 'Invalid JSON in Payload' });
             }
         } else if (req.body.Body && req.body.From) {
             // Standardowy format (dla testów lokalnych i niektórych webhooków Twilio)
+            console.log('🔍 Typ webhooka: STANDARDOWY');
             incomingMessage = req.body.Body;
             fromNumber = req.body.From;
             console.log('✅ Użyto standardowego formatu webhook');
@@ -121,6 +119,7 @@ router.post('/webhook', async (req, res) => {
             return res.status(400).json({ error: 'Unknown webhook format' });
         }
         
+        // Etykieta do przetwarzania wiadomości
         // Walidacja danych wejściowych
         if (!fromNumber) {
             console.error('❌ Brak numeru telefonu w req.body.From');

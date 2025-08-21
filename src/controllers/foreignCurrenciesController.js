@@ -8,7 +8,39 @@ export async function getUserForeignCurrencies(userId) {
       WHERE user_id = ${userId} 
       ORDER BY currency
     `;
-    return currencies;
+    
+    // Add PLN value for each currency
+    const currenciesWithPLNValue = [];
+    for (const currency of currencies) {
+      try {
+        // Get current exchange rate - currencies table stores rates as "EUR/PLN", "USD/PLN", etc.
+        const currencyPair = currency.currency.toUpperCase() + '/PLN';
+        const exchangeRate = await sql`
+          SELECT rate_pln FROM currencies WHERE name = ${currencyPair}
+        `;
+        
+        let plnValue = 0;
+        if (exchangeRate.length > 0) {
+          const rate = parseFloat(exchangeRate[0].rate_pln);
+          const amount = parseFloat(currency.amount);
+          plnValue = amount * rate;
+        }
+        
+        currenciesWithPLNValue.push({
+          ...currency,
+          pln_value: plnValue.toFixed(2)
+        });
+      } catch (error) {
+        console.error(`Error getting exchange rate for ${currency.currency}:`, error);
+        // If we can't get the exchange rate, still include the currency with 0 PLN value
+        currenciesWithPLNValue.push({
+          ...currency,
+          pln_value: "0.00"
+        });
+      }
+    }
+    
+    return currenciesWithPLNValue;
   } catch (error) {
     console.error("Error getting user foreign currencies:", error);
     throw error;
@@ -99,7 +131,6 @@ export async function getUserForeignCurrenciesTotalValue(userId) {
         // So we multiply the foreign currency amount by the rate to get PLN value
         totalValuePLN += amount * rate;
         
-        console.log(`Currency: ${currency.currency}, Amount: ${amount}, Rate: ${rate}, Value in PLN: ${amount * rate}`);
       } else {
         console.warn(`No exchange rate found for ${currencyPair}`);
       }

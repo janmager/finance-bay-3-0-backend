@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
+import { sql } from '../config/db.js';
 import { createTransaction } from '../controllers/transactionsController.js';
 import { addAILog } from './aiLogsController.js';
 

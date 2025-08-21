@@ -19,8 +19,9 @@ const userSessions = new Map();
 router.post('/webhook', async (req, res) => {
     try {
         const incomingMessage = req.body.Body;
-        const fromNumber = req.body.From;
-        
+        let fromNumber = req.body.From;
+        fromNumber = fromNumber[0] + ' ' + fromNumber.slice(1,)
+
         console.log(`🔔 Otrzymano wiadomość WhatsApp od ${fromNumber}: "${incomingMessage}"`);
         
         // Sprawdź czy użytkownik ma sesję

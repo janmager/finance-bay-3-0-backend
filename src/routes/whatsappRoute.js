@@ -22,13 +22,41 @@ router.post('/webhook', async (req, res) => {
         console.log('🔍 Debug - req.body:', JSON.stringify(req.body, null, 2));
         console.log('🔍 Debug - req.headers:', JSON.stringify(req.headers, null, 2));
         
+        // Identyfikuj typ webhooka
+        if (req.body.Payload && req.body.error_code) {
+            console.log('🔍 Typ webhooka: STATUS CALLBACK (błąd)');
+        } else if (req.body.Payload && req.body.webhook) {
+            console.log('🔍 Typ webhooka: PAYLOAD JSON');
+        } else if (req.body.Body && req.body.From) {
+            console.log('🔍 Typ webhooka: STANDARDOWY');
+        } else {
+            console.log('🔍 Typ webhooka: NIEZNANY');
+        }
+        
         let incomingMessage, fromNumber;
         
         // Sprawdź czy to jest webhook z błędem (status callback)
         if (req.body.Payload && req.body.error_code) {
             console.log('⚠️ Otrzymano webhook z błędem Twilio:', req.body.error_code);
             console.log('⚠️ Szczegóły błędu:', req.body.more_info);
-            return res.status(200).send('OK - Error webhook received');
+            console.log('⚠️ Ignoruję webhook z błędem - nie przetwarzam');
+            return res.status(200).send('OK - Error webhook ignored');
+        }
+        
+        // Sprawdź czy to jest webhook z błędem w Payload
+        if (req.body.Payload && !req.body.webhook) {
+            try {
+                const payloadData = JSON.parse(req.body.Payload);
+                if (payloadData.error_code) {
+                    console.log('⚠️ Otrzymano webhook z błędem w Payload:', payloadData.error_code);
+                    console.log('⚠️ Szczegóły błędu:', payloadData.more_info);
+                    console.log('⚠️ Ignoruję webhook z błędem - nie przetwarzam');
+                    return res.status(200).send('OK - Error webhook in Payload ignored');
+                }
+            } catch (parseError) {
+                // Jeśli nie można sparsować JSON, kontynuuj normalne przetwarzanie
+                console.log('⚠️ Nie można sparsować Payload, kontynuuję normalne przetwarzanie');
+            }
         }
         
         // Sprawdź czy to jest webhook z wiadomością
@@ -81,10 +109,16 @@ router.post('/webhook', async (req, res) => {
                 console.error('❌ Błąd parsowania JSON z Payload:', parseError);
                 return res.status(400).json({ error: 'Invalid JSON in Payload' });
             }
-        } else {
-            // Standardowy format (dla testów lokalnych)
+        } else if (req.body.Body && req.body.From) {
+            // Standardowy format (dla testów lokalnych i niektórych webhooków Twilio)
             incomingMessage = req.body.Body;
             fromNumber = req.body.From;
+            console.log('✅ Użyto standardowego formatu webhook');
+        } else {
+            // Nieznany format webhook
+            console.error('❌ Nieznany format webhook');
+            console.error('❌ req.body:', req.body);
+            return res.status(400).json({ error: 'Unknown webhook format' });
         }
         
         // Walidacja danych wejściowych

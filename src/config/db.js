@@ -47,6 +47,16 @@ export async function initDB(){
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )`;
 
+        await sql`CREATE TABLE IF NOT EXISTS users (
+            id VARCHAR(255) PRIMARY KEY,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            username VARCHAR(255),
+            monthly_limit DECIMAL(10,2) DEFAULT 3000,
+            avatar TEXT,
+            currency VARCHAR(10) DEFAULT 'pln',
+            balance DECIMAL(10,2) DEFAULT 0
+        )`;
+
         console.log("Database initialized successfully.")
     }
     catch(e){

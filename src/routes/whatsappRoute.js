@@ -20,8 +20,13 @@ router.post('/webhook', async (req, res) => {
     try {
         const incomingMessage = req.body.Body;
         let fromNumber = req.body.From;
-        fromNumber = fromNumber[0] + ' ' + fromNumber.slice(1,)
-
+        
+        // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
+        fromNumber = fromNumber.trim().replace(/\s+/g, '');
+        if (!fromNumber.startsWith('+')) {
+            fromNumber = '+' + fromNumber;
+        }
+        
         console.log(`🔔 Otrzymano wiadomość WhatsApp od ${fromNumber}: "${incomingMessage}"`);
         
         // Sprawdź czy użytkownik ma sesję
@@ -33,7 +38,8 @@ router.post('/webhook', async (req, res) => {
                 phoneNumber: fromNumber,
                 userId: null,
                 isAuthenticated: false,
-                step: 'waiting_for_id'
+                step: 'waiting_for_id',
+                lastActivity: new Date().toISOString()
             };
             userSessions.set(fromNumber, userSession);
             
@@ -51,6 +57,9 @@ router.post('/webhook', async (req, res) => {
             const userId = incomingMessage.trim();
             console.log(`🔍 Sprawdzanie ID użytkownika: ${userId}`);
             
+            // Aktualizuj timestamp aktywności
+            userSession.lastActivity = new Date().toISOString();
+            
             try {
                 const userExists = await checkUserExists(userId);
                 
@@ -59,6 +68,7 @@ router.post('/webhook', async (req, res) => {
                     userSession.userId = userId;
                     userSession.isAuthenticated = true;
                     userSession.step = 'authenticated';
+                    userSession.lastActivity = new Date().toISOString();
                     userSessions.set(fromNumber, userSession);
                     
                     const response = "✅ Zalogowano pomyślnie! Teraz wyślij zdjęcie rachunku lub paragonu.";
@@ -73,7 +83,7 @@ router.post('/webhook', async (req, res) => {
                 }
                 
             } catch (error) {
-                console.error('Błąd podczas sprawdzania użytkownika:', error);
+                console.error('❌ Błąd podczas sprawdzania użytkownika:', error);
                 const response = "❌ Wystąpił błąd podczas sprawdzania użytkownika. Spróbuj ponownie.";
                 await sendWhatsAppMessage(fromNumber, response);
             }
@@ -81,6 +91,9 @@ router.post('/webhook', async (req, res) => {
         } else if (userSession.step === 'authenticated') {
             // Użytkownik jest zalogowany - przetwórz wiadomość
             console.log(`💬 Przetwarzanie wiadomości od zalogowanego użytkownika ${userSession.userId}`);
+            
+            // Aktualizuj timestamp aktywności
+            userSession.lastActivity = new Date().toISOString();
             
             // Tutaj możesz dodać logikę do przetwarzania zdjęć/wiadomości
             // Na razie potwierdź odbiór
@@ -133,11 +146,9 @@ async function checkUserExists(userId) {
 // Funkcja do wysyłania wiadomości WhatsApp
 async function sendWhatsAppMessage(to, message) {
     try {
-        // Tryb testowy - nie wysyłaj rzeczywistych wiadomości WhatsApp
-        if (process.env.TEST_MODE === 'true') {
-            console.log(`🧪 [TEST MODE] Wiadomość do ${to}: "${message}"`);
-            return;
-        }
+        // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
+        const cleanNumber = to.trim().replace(/\s+/g, '');
+        const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber : '+' + cleanNumber;
         
         if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
             console.error('❌ Brak konfiguracji Twilio - nie można wysłać wiadomości');
@@ -147,82 +158,92 @@ async function sendWhatsAppMessage(to, message) {
         const result = await client.messages.create({
             body: message,
             from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-            to: `whatsapp:${to}`
+            to: `whatsapp:${formattedNumber}`
         });
         
-        console.log(`📤 Wysłano wiadomość WhatsApp do ${to}: "${message}"`);
+        console.log(`📤 Wysłano wiadomość WhatsApp do ${formattedNumber}: "${message}"`);
         console.log(`📋 ID wiadomości Twilio: ${result.sid}`);
         
     } catch (error) {
         console.error('❌ Błąd wysyłania wiadomości WhatsApp:', error);
         
-        // Dodaj więcej szczegółów o błędzie
+        // Dodaj szczegóły o błędzie dla produkcji
         if (error.code === 21211) {
-            console.error('💡 Wskazówka: Użytkownik musi najpierw dołączyć do WhatsApp Sandbox');
-            console.error('💡 Użytkownik powinien wysłać "join <słowo>" na numer Twilio');
+            console.error('💡 Błąd 21211: Nieprawidłowy numer telefonu');
+            console.error('💡 Sprawdź format numeru:', to);
+        } else if (error.code === 21214) {
+            console.error('💡 Błąd 21214: Numer nie jest w WhatsApp');
+            console.error('💡 Użytkownik musi mieć aktywny WhatsApp');
+        } else if (error.code === 21608) {
+            console.error('💡 Błąd 21608: Przekroczono limit wiadomości');
+            console.error('💡 Sprawdź limity Twilio WhatsApp Business');
         }
     }
 }
 
-// Funkcja do wywołania Twojego API AI (opcjonalna)
-async function callYourAIEndpoint(message, userId) {
-    try {
-        const response = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5001'}/api/ai/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: message,
-                source: 'whatsapp',
-                userId: userId
-            })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            return data.response || 'Przepraszam, nie mogę teraz odpowiedzieć.';
-        } else {
-            console.error('❌ Błąd API AI:', response.status);
-            return 'Przepraszam, wystąpił błąd techniczny.';
-        }
-        
-    } catch (error) {
-        console.error('❌ Błąd wywołania API AI:', error);
-        return 'Przepraszam, wystąpił błąd techniczny.';
-    }
-}
-
-// Endpoint do sprawdzania statusu sesji (debug)
+// Endpoint do sprawdzania statusu sesji (produkcja)
 router.get('/session/:phoneNumber', (req, res) => {
     const { phoneNumber } = req.params;
-    const session = userSessions.get(phoneNumber);
+    const cleanNumber = phoneNumber.trim().replace(/\s+/g, '');
+    const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber : '+' + cleanNumber;
+    
+    const session = userSessions.get(formattedNumber);
     
     if (session) {
         res.json({
-            phoneNumber,
+            phoneNumber: formattedNumber,
             session: {
                 userId: session.userId,
                 isAuthenticated: session.isAuthenticated,
-                step: session.step
+                step: session.step,
+                lastActivity: new Date().toISOString()
             }
         });
     } else {
-        res.json({ phoneNumber, session: null });
+        res.json({ phoneNumber: formattedNumber, session: null });
     }
 });
 
-// Endpoint do listy wszystkich sesji (debug)
+// Endpoint do listy wszystkich sesji (produkcja)
 router.get('/sessions', (req, res) => {
     const sessions = {};
+    const now = new Date();
+    
     userSessions.forEach((session, phoneNumber) => {
         sessions[phoneNumber] = {
             userId: session.userId,
             isAuthenticated: session.isAuthenticated,
-            step: session.step
+            step: session.step,
+            lastActivity: now.toISOString()
         };
     });
-    res.json(sessions);
+    
+    res.json({
+        totalSessions: userSessions.size,
+        sessions: sessions,
+        timestamp: now.toISOString()
+    });
+});
+
+// Endpoint do czyszczenia starych sesji (produkcja)
+router.delete('/sessions/cleanup', (req, res) => {
+    const before = userSessions.size;
+    const now = Date.now();
+    const maxAge = 24 * 60 * 60 * 1000; // 24 godziny
+    
+    // Usuń sesje starsze niż 24 godziny
+    for (const [phoneNumber, session] of userSessions.entries()) {
+        if (session.lastActivity && (now - new Date(session.lastActivity).getTime()) > maxAge) {
+            userSessions.delete(phoneNumber);
+        }
+    }
+    
+    const after = userSessions.size;
+    res.json({
+        message: 'Cleanup completed',
+        sessionsRemoved: before - after,
+        sessionsRemaining: after
+    });
 });
 
 export default router;

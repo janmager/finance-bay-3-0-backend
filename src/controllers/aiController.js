@@ -189,6 +189,7 @@ Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawieraj�
           title: transactionTitle,
           amount: transactionAmount,
           category: transactionCategory,
+          created_at: transactionDate,
           note: transactionDescription,
           transaction_type: 'expense',
           internal_operation: false

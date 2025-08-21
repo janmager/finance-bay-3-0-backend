@@ -24,7 +24,7 @@ router.post('/webhook', async (req, res) => {
         // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
         fromNumber = fromNumber.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
         if (!fromNumber.startsWith('+')) {
-           fromNumber = '+' + cleanNumber.substring(0,2) + cleanNumber.substring(2);
+           fromNumber = '+' + fromNumber.substring(0,2) + fromNumber.substring(2);
         }
         
         console.log(`🔔 Otrzymano wiadomość WhatsApp od ${fromNumber}: "${incomingMessage}"`);

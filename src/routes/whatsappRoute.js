@@ -132,6 +132,12 @@ async function checkUserExists(userId) {
 // Funkcja do wysyłania wiadomości WhatsApp
 async function sendWhatsAppMessage(to, message) {
     try {
+        // Tryb testowy - nie wysyłaj rzeczywistych wiadomości WhatsApp
+        if (process.env.TEST_MODE === 'true') {
+            console.log(`🧪 [TEST MODE] Wiadomość do ${to}: "${message}"`);
+            return;
+        }
+        
         if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
             console.error('❌ Brak konfiguracji Twilio - nie można wysłać wiadomości');
             return;
@@ -148,6 +154,12 @@ async function sendWhatsAppMessage(to, message) {
         
     } catch (error) {
         console.error('❌ Błąd wysyłania wiadomości WhatsApp:', error);
+        
+        // Dodaj więcej szczegółów o błędzie
+        if (error.code === 21211) {
+            console.error('💡 Wskazówka: Użytkownik musi najpierw dołączyć do WhatsApp Sandbox');
+            console.error('💡 Użytkownik powinien wysłać "join <słowo>" na numer Twilio');
+        }
     }
 }
 

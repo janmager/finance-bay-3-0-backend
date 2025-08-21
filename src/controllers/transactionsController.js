@@ -575,6 +575,7 @@ export async function createTransaction(req, res) {
       note,
       transaction_type,
       internal_operation,
+      created_at,
     } = req.body;
 
     if (!title || !user_id || amount === undefined || !category) {
@@ -587,7 +588,7 @@ export async function createTransaction(req, res) {
     const id = crypto.randomUUID();
     const transaction = await sql`
         INSERT INTO transactions (id, user_id, title, amount, category, created_at, type, internal_operation, note) 
-        VALUES (${id}, ${user_id}, ${title}, ${transactionAmount}, ${category}, ${new Date().valueOf()}, ${transaction_type}, ${internal_operation}, ${note})
+        VALUES (${id}, ${user_id}, ${title}, ${transactionAmount}, ${category}, ${created_at ? created_at : new Date().valueOf()}, ${transaction_type}, ${internal_operation}, ${note})
             RETURNING *
         `;
 

@@ -14,8 +14,11 @@ import incomingIncomesRoute from "./routes/incomingIncomesRoute.js";
 import aiRoute from "./routes/aiRoute.js";
 import aiLogsRoute from "./routes/aiLogsRoute.js";
 import whatsappRoute from "./routes/whatsappRoute.js";
+import currenciesRoute from "./routes/currenciesRoute.js";
+import foreignCurrenciesRoute from "./routes/foreignCurrenciesRoute.js";
 import cors from "cors";
-import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll, checkUsersIncomingPayments, checkUsersIncomingIncomes } from "./config/cron.js";
+import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll, checkUsersIncomingPayments, checkUsersIncomingIncomes, refreshCurrenciesDaily } from "./config/cron.js";
+import { initializeCurrencies } from "./controllers/currenciesController.js";
 
 dotenv.config();
 
@@ -35,6 +38,7 @@ if (process.env.NODE_ENV === "production" || test) {
   saveUsersAccountsValueAll.start();
   checkUsersIncomingPayments.start();
   checkUsersIncomingIncomes.start();
+  refreshCurrenciesDaily.start();
 }
 
 const PORT = process.env.PORT || 5001;
@@ -51,12 +55,22 @@ app.use("/api/incoming-incomes", incomingIncomesRoute);
 app.use("/api/ai", aiRoute);
 app.use("/api/ai-logs", aiLogsRoute);
 app.use("/api/whatsapp", whatsappRoute);
+app.use("/api/currencies", currenciesRoute);
+app.use("/api/foreign-currencies", foreignCurrenciesRoute);
 
 app.get("/api/health", (req, res) => {
   res.send("API is working fine.");
 });
 
-initDB().then(() => {
+initDB().then(async () => {
+  try {
+    // Initialize currencies table with initial data
+    await initializeCurrencies();
+    console.log("Currencies initialized successfully");
+  } catch (error) {
+    console.error("Error initializing currencies:", error);
+  }
+  
   app.listen(PORT, () => {
     console.log("Server is up and running on PORT: ", PORT);
   });

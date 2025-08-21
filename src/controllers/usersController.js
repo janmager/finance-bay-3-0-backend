@@ -1,4 +1,5 @@
 import { API_URL, sql } from "../config/db.js";
+import fetch from "node-fetch";
 
 export async function createUser(req, res) {
   try {
@@ -62,11 +63,34 @@ export async function getTotalAccountValue(req, res) {
       });
     }
 
-    let total = Number(user[0].balance) + Number(totalSavings);
+    // total of foreign currencies in PLN
+    let totalForeignCurrencies = 0;
+    try {
+      const foreignCurrenciesResponse = await fetch(`${API_URL}/api/foreign-currencies/${userId}/total-value`);
+      
+      if (foreignCurrenciesResponse.ok) {
+        const foreignCurrenciesData = await foreignCurrenciesResponse.json();
+        totalForeignCurrencies = Number(foreignCurrenciesData.totalValuePLN);
+        
+        if (totalForeignCurrencies > 0) {
+          segments.push({
+            label: "foreign-currencies",
+            value: totalForeignCurrencies,
+          });
+        }
+      }
+    } catch (foreignCurrenciesError) {
+      console.log("Error fetching foreign currencies total value:", foreignCurrenciesError);
+      // Continue without foreign currencies if there's an error
+    }
+
+    let total = Number(user[0].balance) + Number(totalSavings) + Number(totalForeignCurrencies);
     segments.push({
       label: "wallet",
       value: Number(user[0].balance),
     });
+
+    console.log('segments', segments);
 
     let percent_segments = [];
     segments.map((seg) => {

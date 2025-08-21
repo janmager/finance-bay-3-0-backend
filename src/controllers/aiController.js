@@ -182,6 +182,7 @@ Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawieraj�
         const transactionCategory = parsedResponse.category;
         const transactionDescription = parsedResponse.description || '';
         const transactionDate = parsedResponse.created_at ? new Date(parsedResponse.created_at).valueOf() : new Date().valueOf();
+        console.log('Transaction date:', transactionDate);
         
         // Create transaction using the createTransaction function directly
         const transactionPayload = {

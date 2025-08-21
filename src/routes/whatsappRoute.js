@@ -147,8 +147,8 @@ async function checkUserExists(userId) {
 async function sendWhatsAppMessage(to, message) {
     try {
         // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
-        const cleanNumber = to.trim().replace(/\s+/g, '');
-        const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber : '+' + cleanNumber;
+        const cleanNumber = to.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
+        const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber.substring(0,2) + cleanNumber.substring(2) : '+' + cleanNumber.substring(0,2) + cleanNumber.substring(2);
         
         if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
             console.error('❌ Brak konfiguracji Twilio - nie można wysłać wiadomości');

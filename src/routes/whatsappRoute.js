@@ -134,7 +134,7 @@ router.post('/webhook', async (req, res) => {
         }
         
         // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
-        fromNumber = fromNumber.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
+        fromNumber = fromNumber.trim().replace(/\s+/g, '')
         if (!fromNumber.startsWith('+')) {
             fromNumber = '+' + fromNumber.substring(0,2) + fromNumber.substring(2);
         }
@@ -273,7 +273,7 @@ async function sendWhatsAppMessage(to, message) {
         }
         
         // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
-        const cleanNumber = to.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
+        const cleanNumber = to.trim().replace(/\s+/g, '')
         const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber.substring(0,2) + cleanNumber.substring(2) : '+' + cleanNumber.substring(0,2) + cleanNumber.substring(2);
         
         console.log('🔍 Formatowanie numeru:', { original: to, cleaned: cleanNumber, formatted: formattedNumber });
@@ -312,7 +312,7 @@ async function sendWhatsAppMessage(to, message) {
 // Endpoint do sprawdzania statusu sesji (produkcja)
 router.get('/session/:phoneNumber', (req, res) => {
     const { phoneNumber } = req.params;
-    const cleanNumber = phoneNumber.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
+    const cleanNumber = phoneNumber.trim().replace(/\s+/g, '')
     const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber.substring(0,2) + cleanNumber.substring(2) : '+' + cleanNumber.substring(0,2) + cleanNumber.substring(2);
     
     const session = userSessions.get(formattedNumber);

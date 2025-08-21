@@ -73,7 +73,7 @@ Odpowiedź chcę otrzymać w formacie JSON z następującą strukturą:
   "amount": "kwota",
   "category": "kategoria",
   "description": "opis (max 300 znaków)",
-  "created_at": "data (timestamp)",
+  "created_at": "data (timestamp w milisekundach)",
   "percent_title": 85,
   "percent_amount": 95,
   "percent_category": 70,

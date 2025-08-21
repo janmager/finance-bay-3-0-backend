@@ -22,8 +22,70 @@ router.post('/webhook', async (req, res) => {
         console.log('🔍 Debug - req.body:', JSON.stringify(req.body, null, 2));
         console.log('🔍 Debug - req.headers:', JSON.stringify(req.headers, null, 2));
         
-        const incomingMessage = req.body.Body;
-        let fromNumber = req.body.From;
+        let incomingMessage, fromNumber;
+        
+        // Sprawdź czy to jest webhook z błędem (status callback)
+        if (req.body.Payload && req.body.error_code) {
+            console.log('⚠️ Otrzymano webhook z błędem Twilio:', req.body.error_code);
+            console.log('⚠️ Szczegóły błędu:', req.body.more_info);
+            return res.status(200).send('OK - Error webhook received');
+        }
+        
+        // Sprawdź czy to jest webhook z wiadomością
+        if (req.body.Payload && req.body.webhook) {
+            try {
+                // Parsuj dane z Payload
+                const webhookData = JSON.parse(req.body.Payload);
+                console.log('🔍 Parsed webhook data:', JSON.stringify(webhookData, null, 2));
+                
+                if (webhookData.webhook && webhookData.webhook.parameters) {
+                    const params = webhookData.webhook.parameters;
+                    incomingMessage = params.Body;
+                    fromNumber = params.From;
+                    
+                    console.log('✅ Wyciągnięto dane z webhook:', { Body: incomingMessage, From: fromNumber });
+                } else {
+                    console.error('❌ Nieprawidłowa struktura webhook data');
+                    return res.status(400).json({ error: 'Invalid webhook structure' });
+                }
+            } catch (parseError) {
+                console.error('❌ Błąd parsowania JSON z Payload:', parseError);
+                return res.status(400).json({ error: 'Invalid JSON in Payload' });
+            }
+        } else if (req.body.Payload) {
+            // Sprawdź czy Payload zawiera dane wiadomości
+            try {
+                const payloadData = JSON.parse(req.body.Payload);
+                console.log('🔍 Parsed payload data:', JSON.stringify(payloadData, null, 2));
+                
+                // Sprawdź różne możliwe struktury
+                if (payloadData.webhook && payloadData.webhook.parameters) {
+                    const params = payloadData.webhook.parameters;
+                    incomingMessage = params.Body;
+                    fromNumber = params.From;
+                } else if (payloadData.Body && payloadData.From) {
+                    incomingMessage = payloadData.Body;
+                    fromNumber = payloadData.From;
+                } else if (payloadData.webhook && payloadData.webhook.request && payloadData.webhook.request.parameters) {
+                    const params = payloadData.webhook.request.parameters;
+                    incomingMessage = params.Body;
+                    fromNumber = params.From;
+                } else {
+                    console.error('❌ Nieznana struktura Payload');
+                    console.error('❌ Payload:', req.body.Payload);
+                    return res.status(400).json({ error: 'Unknown Payload structure' });
+                }
+                
+                console.log('✅ Wyciągnięto dane z Payload:', { Body: incomingMessage, From: fromNumber });
+            } catch (parseError) {
+                console.error('❌ Błąd parsowania JSON z Payload:', parseError);
+                return res.status(400).json({ error: 'Invalid JSON in Payload' });
+            }
+        } else {
+            // Standardowy format (dla testów lokalnych)
+            incomingMessage = req.body.Body;
+            fromNumber = req.body.From;
+        }
         
         // Walidacja danych wejściowych
         if (!fromNumber) {

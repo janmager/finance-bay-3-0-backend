@@ -81,9 +81,10 @@ Odpowiedź chcę otrzymać w formacie JSON z następującą strukturą:
   "percent_created_at": 90
 }
 
+Dla parametru created_at jeśli masz dane (odczytane z grafiki) to podaj datę w formacie timestamp.
 Dla parametru category masz dostępne kategorie: food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other.
 Dla parametru title jeśli masz dane to podaj nazwę sklepu.
-Dla parametru description jeśli masz dane to podaj kupione produkty, wypisane po kolei po przecinku.
+Dla parametru description jeśli masz dane to podaj nazwy kupionych produktów (ich główne nazwy bez szczegółów), wypisane w liście.
 Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawierają informacje jak bardzo jesteś pewny/zgodny co do poprawności zaczytania wartości z grafiki. Jeśli nie jesteś czegoś pewien/nie masz takich danych ustaw wartość parametru na null, a wartości procentowe na 0.`;
     }
 

@@ -22,9 +22,9 @@ router.post('/webhook', async (req, res) => {
         let fromNumber = req.body.From;
         
         // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
-        fromNumber = fromNumber.trim().replace(/\s+/g, '');
+        fromNumber = fromNumber.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
         if (!fromNumber.startsWith('+')) {
-            fromNumber = '+' + fromNumber;
+           fromNumber = '+' + cleanNumber.substring(0,2) + cleanNumber.substring(2);
         }
         
         console.log(`🔔 Otrzymano wiadomość WhatsApp od ${fromNumber}: "${incomingMessage}"`);
@@ -184,8 +184,8 @@ async function sendWhatsAppMessage(to, message) {
 // Endpoint do sprawdzania statusu sesji (produkcja)
 router.get('/session/:phoneNumber', (req, res) => {
     const { phoneNumber } = req.params;
-    const cleanNumber = phoneNumber.trim().replace(/\s+/g, '');
-    const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber : '+' + cleanNumber;
+    const cleanNumber = phoneNumber.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
+    const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber.substring(0,2) + cleanNumber.substring(2) : '+' + cleanNumber.substring(0,2) + cleanNumber.substring(2);
     
     const session = userSessions.get(formattedNumber);
     

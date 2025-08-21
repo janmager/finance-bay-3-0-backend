@@ -18,13 +18,30 @@ const userSessions = new Map();
 // Endpoint webhook od Twilio
 router.post('/webhook', async (req, res) => {
     try {
+        // Debug: sprawdź co przychodzi z Twilio
+        console.log('🔍 Debug - req.body:', JSON.stringify(req.body, null, 2));
+        console.log('🔍 Debug - req.headers:', JSON.stringify(req.headers, null, 2));
+        
         const incomingMessage = req.body.Body;
         let fromNumber = req.body.From;
+        
+        // Walidacja danych wejściowych
+        if (!fromNumber) {
+            console.error('❌ Brak numeru telefonu w req.body.From');
+            console.error('❌ req.body:', req.body);
+            return res.status(400).json({ error: 'Missing From field' });
+        }
+        
+        if (!incomingMessage) {
+            console.error('❌ Brak treści wiadomości w req.body.Body');
+            console.error('❌ req.body:', req.body);
+            return res.status(400).json({ error: 'Missing Body field' });
+        }
         
         // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
         fromNumber = fromNumber.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
         if (!fromNumber.startsWith('+')) {
-           fromNumber = '+' + fromNumber.substring(0,2) + fromNumber.substring(2);
+            fromNumber = '+' + fromNumber.substring(0,2) + fromNumber.substring(2);
         }
         
         console.log(`🔔 Otrzymano wiadomość WhatsApp od ${fromNumber}: "${incomingMessage}"`);
@@ -109,6 +126,7 @@ router.post('/webhook', async (req, res) => {
         
     } catch (error) {
         console.error('❌ Błąd w webhook WhatsApp:', error);
+        console.error('❌ Stack trace:', error.stack);
         res.status(500).send('Błąd serwera');
     }
 });
@@ -145,10 +163,25 @@ async function checkUserExists(userId) {
 
 // Funkcja do wysyłania wiadomości WhatsApp
 async function sendWhatsAppMessage(to, message) {
+    console.log('to', to);
+    
     try {
+        // Walidacja parametrów
+        if (!to || typeof to !== 'string') {
+            console.error('❌ Nieprawidłowy numer telefonu:', to);
+            return;
+        }
+        
+        if (!message || typeof message !== 'string') {
+            console.error('❌ Nieprawidłowa treść wiadomości:', message);
+            return;
+        }
+        
         // Popraw format numeru telefonu - usuń spacje i dodaj + jeśli brakuje
         const cleanNumber = to.trim().replace(/\s+/g, '').replace('whatsapp:+', '');
         const formattedNumber = cleanNumber.startsWith('+') ? cleanNumber.substring(0,2) + cleanNumber.substring(2) : '+' + cleanNumber.substring(0,2) + cleanNumber.substring(2);
+        
+        console.log('🔍 Formatowanie numeru:', { original: to, cleaned: cleanNumber, formatted: formattedNumber });
         
         if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
             console.error('❌ Brak konfiguracji Twilio - nie można wysłać wiadomości');

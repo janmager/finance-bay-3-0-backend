@@ -90,15 +90,11 @@ export const checkUsersIncomingIncomes = new cron.CronJob("0 0 22 * * *", functi
 // Wykonuje się o 00:00 w czasie GMT+2
 // Serwer GMT+0: 22:00 (poprzedniego dnia)
 // Klient GMT+2: 00:00 (aktualnego dnia)
-export const refreshCurrenciesDaily = new cron.CronJob("0 0 22 * * *", function async () {
+export const refreshCurrenciesDaily = new cron.CronJob("0 0 8 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
   const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;
   
-  try {
-    refreshCurrencyRates();
-    console.log(`[CRON] ${timeString} refreshCurrenciesDaily successfully.`);
-  } catch (error) {
-    console.error(`[CRON] ${timeString} refreshCurrenciesDaily failed:`, error);
-  }
+  refreshCurrencyRates();
+  console.log(`[CRON] ${timeString} refreshCurrenciesDaily successfully.`);
 });

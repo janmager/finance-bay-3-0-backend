@@ -432,132 +432,190 @@ export async function getUserMostCategoriesStats(req, res) {
     const { userId } = req.params;
 
     if (userId === undefined) {
-      res.status(400).json({ message: "All fields are required." });
+      return res.status(400).json({ message: "User ID is required." });
     }
 
-    const current_month_transactions = await sql`
-            SELECT * from transactions
-            WHERE user_id = ${userId}::varchar
-            AND DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE)
-            AND internal_operation = FALSE
-        `;
+    // Pobierz transakcje income z current month (tylko z internal=false)
+    const current_month_income_transactions = await sql`
+      SELECT * from transactions
+      WHERE user_id = ${userId}::varchar
+      AND DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE)
+      AND internal_operation = FALSE
+      AND type = 'income'
+    `;
 
-    const prev_month_transactions = await sql`
-        SELECT * from transactions
+    // Pobierz transakcje expense z current month (tylko z internal=false)
+    const current_month_expense_transactions = await sql`
+      SELECT * from transactions
+      WHERE user_id = ${userId}::varchar
+      AND DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE)
+      AND internal_operation = FALSE
+      AND type = 'expense'
+    `;
+
+    // Pobierz transakcje income z previous month (tylko z internal=false)
+    const prev_month_income_transactions = await sql`
+      SELECT * from transactions
       WHERE user_id = ${userId}::varchar
       AND DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-            AND internal_operation = FALSE
-      `;
+      AND internal_operation = FALSE
+      AND type = 'income'
+    `;
 
-    let current_month_category_stats = {};
-    let previous_month_category_stats = {};
-    let total_expense = 0;
-    let total_income = 0;
-    let name = "";
+    // Pobierz transakcje expense z previous month (tylko z internal=false)
+    const prev_month_expense_transactions = await sql`
+      SELECT * from transactions
+      WHERE user_id = ${userId}::varchar
+      AND DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+      AND internal_operation = FALSE
+      AND type = 'expense'
+    `;
 
-    const parseStats = (transactions, outputObj) => {
+    let current_month_income_stats = {};
+    let current_month_expense_stats = {};
+    let previous_month_income_stats = {};
+    let previous_month_expense_stats = {};
+    let total_income_current = 0;
+    let total_expense_current = 0;
+    let total_income_previous = 0;
+    let total_expense_previous = 0;
+
+    const parseStats = (transactions, outputObj, type) => {
+      let totalAmount = 0;
+      
       transactions.forEach((transaction) => {
-        const { category, amount, type, internal_operation } = transaction;
-        name = category;
-        outputObj[category] = {
-          type: type,
-          name: name,
-          ...(type == "expense" &&
-            internal_operation == false && {
-              percentage_of_total_expenses: null,
-            }),
-          ...(type == "income" &&
-            internal_operation == false && {
-              percentage_of_total_incomes: null,
-            }),
-          total_expense:
-            type == "expense" && internal_operation == false
-              ? (outputObj[category]?.total_expense ?? 0) + Math.abs(amount)
-              : outputObj[category]?.total_expense ?? 0,
-          total_income:
-            type == "income" && internal_operation == false
-              ? (outputObj[category]?.total_income ?? 0) + Math.abs(amount)
-              : outputObj[category]?.total_income ?? 0,
-        };
-        if (type == "expense" && internal_operation == false)
-          total_expense += Math.abs(amount);
-        if (type == "income" && internal_operation == false)
-          total_income += Math.abs(amount);
+        const { category, amount } = transaction;
+        
+        // Inicjalizuj kategorię jeśli nie istnieje
+        if (!outputObj[category]) {
+          outputObj[category] = {
+            name: category,
+            type: type,
+            total_amount: 0,
+            percentage_of_total: 0
+          };
+        }
+        
+        // Dodaj kwotę do kategorii
+        outputObj[category].total_amount += Math.abs(amount);
+        
+        // Dodaj do całkowitej kwoty
+        totalAmount += Math.abs(amount);
       });
 
-      // percentage_of_total_expenses
+      // Oblicz procenty dla każdej kategorii
       Object.keys(outputObj).forEach((category) => {
-        outputObj[category] = {
-          ...outputObj[category],
-          ...(outputObj[category].type == "expense" && {
-            percentage_of_total_expenses: Number(
-              (
-                (outputObj[category].total_expense / total_expense) *
-                100
-              ).toFixed(2)
-            ),
-          }),
-          ...(outputObj[category].type == "income" && {
-            percentage_of_total_incomes: Number(
-              ((outputObj[category].total_income / total_income) * 100).toFixed(
-                2
-              )
-            ),
-          }),
-        };
+        if (totalAmount > 0) {
+          outputObj[category].percentage_of_total = Number(
+            ((outputObj[category].total_amount / totalAmount) * 100).toFixed(2)
+          );
+        } else {
+          outputObj[category].percentage_of_total = 0;
+        }
       });
-      return outputObj;
+      
+      return { stats: outputObj, total: totalAmount };
     };
 
-    current_month_category_stats = parseStats(
-      current_month_transactions,
-      current_month_category_stats
+    // Przetwórz dane dla current month - income
+    const current_income_result = parseStats(
+      current_month_income_transactions,
+      current_month_income_stats,
+      'income'
     );
+    current_month_income_stats = current_income_result.stats;
+    total_income_current = current_income_result.total;
 
-    previous_month_category_stats = parseStats(
-      prev_month_transactions,
-      previous_month_category_stats
+    // Przetwórz dane dla current month - expense
+    const current_expense_result = parseStats(
+      current_month_expense_transactions,
+      current_month_expense_stats,
+      'expense'
     );
+    current_month_expense_stats = current_expense_result.stats;
+    total_expense_current = current_expense_result.total;
 
-    // count difference in (%) to prev month
-    Object.keys(current_month_category_stats).forEach((category) => {
-      if (current_month_category_stats[category]) {
-        let change = 0;
+    // Przetwórz dane dla previous month - income
+    const previous_income_result = parseStats(
+      prev_month_income_transactions,
+      previous_month_income_stats,
+      'income'
+    );
+    previous_month_income_stats = previous_income_result.stats;
+    total_income_previous = previous_income_result.total;
 
-        if (current_month_category_stats[category].type == "expense") {
-          change = isNaN(previous_month_category_stats[category]?.total_expense)
-            ? null
-            : Number(
-                ((current_month_category_stats[category].total_expense -
-                  (previous_month_category_stats[category]?.total_expense ??
-                    0)) /
-                  (previous_month_category_stats[category]?.total_expense ??
-                    0)) *
-                  100
-              );
-        } else if (current_month_category_stats[category].type == "income") {
-          change = isNaN(previous_month_category_stats[category]?.total_income)
-            ? null
-            : Number(
-                ((current_month_category_stats[category].total_income -
-                  (previous_month_category_stats[category]?.total_income ??
-                    0)) /
-                  (previous_month_category_stats[category]?.total_income ??
-                    0)) *
-                  100
-              );
+    // Przetwórz dane dla previous month - expense
+    const previous_expense_result = parseStats(
+      prev_month_expense_transactions,
+      previous_month_expense_stats,
+      'expense'
+    );
+    previous_month_expense_stats = previous_expense_result.stats;
+    total_expense_previous = previous_expense_result.total;
+
+    // Oblicz zmiany procentowe względem poprzedniego miesiąca dla income
+    Object.keys(current_month_income_stats).forEach((category) => {
+      if (current_month_income_stats[category]) {
+        let change = null;
+        
+        const currentAmount = current_month_income_stats[category].total_amount;
+        const previousAmount = previous_month_income_stats[category]?.total_amount || 0;
+        
+        if (previousAmount > 0) {
+          change = Number(
+            (((currentAmount - previousAmount) / previousAmount) * 100).toFixed(2)
+          );
+        } else if (currentAmount > 0) {
+          change = 100; // 100% wzrost jeśli poprzedni miesiąc miał 0
         }
+        
+        current_month_income_stats[category] = {
+          ...current_month_income_stats[category],
+          change_percentage_to_previous_month: change,
+        };
+      }
+    });
 
-        current_month_category_stats[category] = {
-          ...current_month_category_stats[category],
+    // Oblicz zmiany procentowe względem poprzedniego miesiąca dla expense
+    Object.keys(current_month_expense_stats).forEach((category) => {
+      if (current_month_expense_stats[category]) {
+        let change = null;
+        
+        const currentAmount = current_month_expense_stats[category].total_amount;
+        const previousAmount = previous_month_expense_stats[category]?.total_amount || 0;
+        
+        if (previousAmount > 0) {
+          change = Number(
+            (((currentAmount - previousAmount) / previousAmount) * 100).toFixed(2)
+          );
+        } else if (currentAmount > 0) {
+          change = 100; // 100% wzrost jeśli poprzedni miesiąc miał 0
+        }
+        
+        current_month_expense_stats[category] = {
+          ...current_month_expense_stats[category],
           change_percentage_to_previous_month: change,
         };
       }
     });
 
     res.status(200).json({
-      current: current_month_category_stats,
-      previous: previous_month_category_stats,
+      income: {
+        current: current_month_income_stats,
+        previous: previous_month_income_stats,
+        totals: {
+          current_month: total_income_current,
+          previous_month: total_income_previous
+        }
+      },
+      expense: {
+        current: current_month_expense_stats,
+        previous: previous_month_expense_stats,
+        totals: {
+          current_month: total_expense_current,
+          previous_month: total_expense_previous
+        }
+      }
     });
   } catch (e) {
     console.log("Error getting the transaction: ", e);

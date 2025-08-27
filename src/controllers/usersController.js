@@ -54,6 +54,10 @@ export async function getTotalAccountValue(req, res) {
     const userSavings = await sql`
       SELECT * FROM savings WHERE user_id = ${userId}::varchar
     `;
+
+    
+
+    
     let totalSavings = 0;
     if (userSavings.length) {
       userSavings.map((save) => (totalSavings += Number(save.deposited)));
@@ -249,6 +253,34 @@ export async function getUserOverview(req, res) {
         AND DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month'
     `;
 
+    // Pobierz kursy walut
+    const currencyRatesResult = await sql`
+      SELECT * FROM currencies ORDER BY name
+    `;
+
+    // Pobierz waluty obce użytkownika
+    const userForeignCurrenciesResult = await sql`
+      SELECT * FROM foreign_currencies 
+      WHERE user_id = ${userId}::varchar
+      ORDER BY currency
+    `;
+
+    // Zestaw kursy walut z walutami obcymi użytkownika
+    const currenciesWithRates = currencyRatesResult.map(rate => {
+      const userCurrency = userForeignCurrenciesResult.find(fc => 
+        fc.currency.toUpperCase() === rate.name.split('/')[0]
+      );
+      
+      return {
+        currency_pair: rate.name,
+        currency_code: rate.name.split('/')[0],
+        rate_pln: parseFloat(rate.rate_pln),
+        last_update: rate.last_update_rate,
+        user_amount: userCurrency ? parseFloat(userCurrency.amount) : 0,
+        user_amount_pln: userCurrency ? (parseFloat(userCurrency.amount) * parseFloat(rate.rate_pln)).toFixed(2) : 0
+      };
+    });
+
     let local_total = {
       thisMonth: {
         expense: 0,
@@ -300,6 +332,10 @@ export async function getUserOverview(req, res) {
         },
         transactions: lastMonthTransactionsResult,
       },
+      currencies: {
+        rates: currenciesWithRates,
+        user_foreign_currencies: userForeignCurrenciesResult
+      }
     };
 
     // console.log(output);

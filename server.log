@@ -1,0 +1,12 @@
+
+> backend@3.1.0 start
+> node src/server.js
+
+🔧 Initializing Firebase Admin SDK...
+📋 Project ID: financebay-3
+📧 Client Email: firebase-adminsdk-fbsvc@financebay-3.iam.gserviceaccount.com
+✅ Firebase Admin SDK initialized successfully
+Database initialized successfully.
+Currencies initialized successfully
+Server is up and running on PORT:  5001
+ℹ️ No FCM tokens found for user test-user

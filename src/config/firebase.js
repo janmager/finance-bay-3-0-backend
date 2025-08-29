@@ -23,17 +23,32 @@ try {
       client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL
     };
 
-    admin.initializeApp({
+    // Validate required environment variables
+    const requiredVars = ['FIREBASE_TYPE', 'FIREBASE_PROJECT_ID', 'FIREBASE_PRIVATE_KEY', 'FIREBASE_CLIENT_EMAIL'];
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    
+    if (missingVars.length > 0) {
+      throw new Error(`Missing required Firebase environment variables: ${missingVars.join(', ')}`);
+    }
+
+    console.log('🔧 Initializing Firebase Admin SDK...');
+    console.log('📋 Project ID:', process.env.FIREBASE_PROJECT_ID);
+    console.log('📧 Client Email:', process.env.FIREBASE_CLIENT_EMAIL);
+
+    firebaseApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       databaseURL: process.env.FIREBASE_DATABASE_URL
     });
     
-    // Successfully initialized
+    console.log('✅ Firebase Admin SDK initialized successfully');
   } else {
     // Already initialized
+    firebaseApp = admin.apps[0];
+    console.log('✅ Firebase Admin SDK already initialized');
   }
 } catch (error) {
   console.error('❌ Error initializing Firebase Admin SDK:', error);
+  console.error('🔍 Check your environment variables and service account configuration');
   firebaseApp = null;
 }
 
@@ -41,6 +56,7 @@ try {
 export async function sendNotificationToUser(userId, notification) {
   try {
     if (!firebaseApp) {
+      console.error('❌ Firebase not initialized. Check environment variables and service account.');
       throw new Error('Firebase not initialized');
     }
 
@@ -51,6 +67,7 @@ export async function sendNotificationToUser(userId, notification) {
     `;
 
     if (userResult.length === 0 || !userResult[0].fcm_tokens || userResult[0].fcm_tokens.length === 0) {
+      console.log(`ℹ️ No FCM tokens found for user ${userId}`);
       return { success: false, message: 'No FCM tokens found for user' };
     }
 
@@ -61,14 +78,18 @@ export async function sendNotificationToUser(userId, notification) {
       try {
         fcmTokens = JSON.parse(fcmTokens);
       } catch (parseError) {
+        console.error(`❌ Invalid FCM tokens format for user ${userId}:`, parseError);
         return { success: false, message: 'Invalid FCM tokens format' };
       }
     }
     
     // Ensure it's an array
     if (!Array.isArray(fcmTokens)) {
+      console.error(`❌ FCM tokens is not an array for user ${userId}:`, typeof fcmTokens);
       return { success: false, message: 'FCM tokens is not an array' };
     }
+
+    console.log(`📱 Sending notification to user ${userId} with ${fcmTokens.length} FCM tokens`);
 
     const results = [];
 
@@ -101,14 +122,17 @@ export async function sendNotificationToUser(userId, notification) {
 
         const response = await admin.messaging().send(message);
         results.push({ token, success: true, messageId: response });
+        console.log(`✅ Notification sent successfully to token: ${token.substring(0, 20)}...`);
       } catch (tokenError) {
-        console.error(`Error sending to token ${token}:`, tokenError);
+        console.error(`❌ Error sending to token ${token.substring(0, 20)}...:`, tokenError.message);
         results.push({ token, success: false, error: tokenError.message });
       }
     }
 
     const successCount = results.filter(r => r.success).length;
     const totalCount = results.length;
+
+    console.log(`📊 Notification results: ${successCount}/${totalCount} successful`);
 
     return {
       success: successCount > 0,
@@ -117,7 +141,7 @@ export async function sendNotificationToUser(userId, notification) {
     };
 
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('❌ Error sending notification:', error);
     throw error;
   }
 }

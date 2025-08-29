@@ -24,12 +24,18 @@ const upload = multer({
 // Accept any field name for the image file
 router.post('/', upload.any(), async (req, res, next) => {
   try {
-    // Process the request
-    const result = await processAIRequest(req.body, req.files);
-    res.json(result);
+    // Ensure form fields are parsed correctly
+    if (!req.body || !req.files) {
+      return res.status(400).json({ error: 'Invalid request format' });
+    }
+    
+    // Process the request by calling the controller function directly
+    await processAIRequest(req, res);
   } catch (error) {
     console.error('Error processing AI request:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 });
 

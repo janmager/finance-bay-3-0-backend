@@ -227,7 +227,14 @@ export async function updateUserUsername(req, res) {
 // Add or update FCM token for user
 export async function updateUserFCMToken(req, res) {
   try {
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
+    console.log('Request body type:', typeof req.body);
+    console.log('Content-Type:', req.get('Content-Type'));
+    
     const { fcm_token, user_id } = req.body;
+    console.log('fcm_token', fcm_token);
+    console.log('user_id', user_id);
 
     if (!user_id || !fcm_token) {
       return res.status(400).json({ message: "User ID and FCM token are required." });

@@ -19,6 +19,7 @@ import foreignCurrenciesRoute from "./routes/foreignCurrenciesRoute.js";
 import cors from "cors";
 import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll, checkUsersIncomingPayments, checkUsersIncomingIncomes, refreshCurrenciesDaily } from "./config/cron.js";
 import { initializeCurrencies } from "./controllers/currenciesController.js";
+import bodyParser from "body-parser";
 
 dotenv.config();
 
@@ -26,8 +27,13 @@ const app = express();
 
 // middleware
 app.use(cors());
-app.use(rateLimiter);
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(rateLimiter);
+
+console.log('Middleware configured: CORS, JSON parsing, URL encoding, Body parser, Rate limiter');
 
 let test = false;
 

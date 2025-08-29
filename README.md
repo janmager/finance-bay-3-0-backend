@@ -240,12 +240,23 @@ POST /api/savings/:userId
 **Body:**
 ```json
 {
-  "name": "string",
-  "targetAmount": "number",
-  "currentAmount": "number",
-  "targetDate": "date"
+  "title": "string",
+  "goal": "number"
 }
 ```
+
+### Update Saving
+```http
+PUT /api/savings/:id/:userId
+```
+**Body:**
+```json
+{
+  "title": "string",
+  "goal": "number"
+}
+```
+**Description:** Update the title and goal amount of an existing saving. The new goal amount cannot be less than the current deposited amount.
 
 ### Delete Saving
 ```http
@@ -437,13 +448,14 @@ interface Transaction {
 ```typescript
 interface Saving {
   id: string;
-  userId: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  targetDate: Date;
-  createdAt: Date;
+  user_id: string;
+  title: string;
+  goal: number;
+  deposited: number;
+  created_at: string;
+  goal_percentage?: number; // Calculated field
 }
+```
 ```
 
 ### Recurring

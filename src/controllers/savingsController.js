@@ -51,12 +51,76 @@ export async function createSaving(req, res) {
   }
 }
 
+export async function updateSaving(req, res) {
+  try {
+    const { title, goal } = req.body;
+    const { id, userId } = req.params;
+
+    if (!title || !goal) {
+      return res.status(400).json({ message: "Title and goal amount are required." });
+    }
+
+    // Validate title length
+    if (title.trim().length === 0 || title.trim().length > 255) {
+      return res.status(400).json({ message: "Title must be between 1 and 255 characters." });
+    }
+
+    // Validate goal amount
+    const goalNumber = Number(goal);
+    if (isNaN(goalNumber) || goalNumber <= 0) {
+      return res.status(400).json({ message: "Goal amount must be a positive number." });
+    }
+
+    // Validate goal amount is not unreasonably large
+    if (goalNumber > 1000000) {
+      return res.status(400).json({ message: "Goal amount cannot exceed 1,000,000 PLN." });
+    }
+
+    // Check if saving exists and belongs to user
+    const existingSaving = await sql`
+      SELECT * FROM savings WHERE id = ${id} AND user_id = ${userId}::varchar
+    `;
+
+    if (existingSaving.length === 0) {
+      return res.status(404).json({ message: "Saving not found or access denied." });
+    }
+
+    // Check if new goal is less than current deposited amount
+    if (goalNumber < Number(existingSaving[0].deposited)) {
+      return res.status(400).json({ 
+        message: "New goal amount cannot be less than the current deposited amount." 
+      });
+    }
+
+    // Update the saving
+    const updatedSaving = await sql`
+      UPDATE savings 
+      SET title = ${title.trim()}, goal = ${goalNumber}
+      WHERE id = ${id} AND user_id = ${userId}::varchar 
+      RETURNING *
+    `;
+
+    // Calculate new goal percentage
+    const saving = updatedSaving[0];
+    saving.goal_percentage = (Number(saving.deposited) / Number(saving.goal)) * 100;
+
+    res.status(200).json({
+      message: "Saving updated successfully",
+      data: saving
+    });
+  } catch (e) {
+    console.log("Error updating the saving: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
 export async function deleteSaving(req, res) {
   const { id, userId } = req.params;
   try {
     const result = await sql`
             DELETE FROM savings WHERE id = ${id} AND user_id = ${userId} RETURNING *
         `;
+
     res.status(200).json({ message: "Saving deleted successfully." });
   } catch (e) {
     console.log("Error deleting the saving: ", e);
@@ -101,7 +165,8 @@ export async function depositToSaving(req, res) {
       res.status(404).json({ message: "Saving not found." });
     }
   } catch (e) {
-    console.log(e);
+    console.log("Error depositing to saving: ", e);
+    res.status(500).json({ message: "Something went wrong." });
   }
 }
 
@@ -141,5 +206,8 @@ export async function withdrawFromSaving(req, res) {
     } else {
       res.status(404).json({ message: "Saving not found." });
     }
-  } catch (e) {}
+  } catch (e) {
+    console.log("Error withdrawing from saving: ", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
 }

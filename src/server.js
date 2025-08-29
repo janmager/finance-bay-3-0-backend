@@ -33,8 +33,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(rateLimiter);
 
-console.log('Middleware configured: CORS, JSON parsing, URL encoding, Body parser, Rate limiter');
-
 let test = false;
 
 if (process.env.NODE_ENV === "production" || test) {

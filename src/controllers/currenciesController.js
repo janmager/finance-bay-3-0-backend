@@ -60,7 +60,6 @@ export async function initializeCurrencies() {
       const initialRates = await fetchCurrencyRates();
       
       for (const rate of initialRates) {
-        console.log(rate.rate_pln)
         await sql`
           INSERT INTO currencies (name, rate_pln, last_update_rate)
           VALUES (${rate.name}, ${rate.rate_pln}, ${rate.last_update_rate})
@@ -81,7 +80,6 @@ export async function refreshCurrencyRates() {
     const rates = await fetchCurrencyRates();
     
     for (const rate of rates) {
-      console.log(rate.rate_pln, rate.name)
       await sql`
         UPDATE currencies 
         SET rate_pln = ${rate.rate_pln}, last_update_rate = ${rate.last_update_rate}
@@ -90,7 +88,6 @@ export async function refreshCurrencyRates() {
     }
     
     console.log(`Currency rates refreshed successfully at ${new Date().toISOString()}`);
-    return { success: true, message: "Currency rates refreshed successfully", rates };
   } catch (error) {
     console.error("Error refreshing currency rates:", error);
     throw error;

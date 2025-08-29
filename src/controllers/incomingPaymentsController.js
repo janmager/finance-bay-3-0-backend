@@ -130,40 +130,43 @@ export async function checkAllUsersForIncomingPayments() {
       `;
 
       for (const payment of incomingPayments) {
-        const today = new Date();
-        console.log(payment.deadline)
-        const deadline = new Date(Number(payment.deadline));
-        // Check if today is >= deadline
-        if (today >= deadline) {
-          // Create transaction for the incoming payment
-          await fetch(API_URL + "/api/transactions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              user_id: user.id,
-              title: payment.title,
-              amount: payment.amount,
-              category: "incoming-payments",
-              note: `Automatyczne rozliczenie: ${payment.description || payment.title}`,
-              transaction_type: "expense",
-              internal_operation: false,
-            }),
-          });
-
-          // Delete the incoming payment after settlement
-          await sql`
-            DELETE FROM incoming_payments WHERE id = ${payment.id}
-          `;
+        if (payment.deadline) {
+          const deadlineDate = new Date(payment.deadline);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (deadlineDate <= today && payment.auto_settle) {
+            // Auto-settle the payment
+            await sql`
+              UPDATE incoming_payments 
+              SET auto_settle = false 
+              WHERE id = ${payment.id}
+            `;
+            
+            // Create a transaction for the settled payment
+            const transactionId = crypto.randomUUID();
+            await sql`
+              INSERT INTO transactions (id, user_id, title, amount, category, created_at, type, internal_operation, note)
+              VALUES (${transactionId}, ${payment.user_id}, ${payment.title || 'Incoming Payment'}, ${payment.amount}, 'incoming-payment', ${new Date().valueOf()}, 'income', false, ${payment.description || 'Auto-settled incoming payment'})
+            `;
+            
+            // Update user balance
+            await sql`
+              UPDATE users SET balance = balance + ${payment.amount} WHERE id = ${payment.user_id}
+            `;
+            
+            // Log balance update
+            const logId = crypto.randomUUID();
+            await sql`
+              INSERT INTO balances_logs (id, user_id, balance, created_at)
+              VALUES (${logId}, ${payment.user_id}, (SELECT balance FROM users WHERE id = ${payment.user_id}), ${new Date().valueOf()})
+            `;
+          }
         }
       }
+      
+      // Successfully processed all users
+    } catch (e) {
+      console.log("Error checking incoming payments: ", e);
     }
-    
-    console.log("Users successfully checked for incoming payments due for settlement.");
-    return true;
-  } catch (e) {
-    console.log("Error checking incoming payments: ", e);
-    return false;
-  }
 }

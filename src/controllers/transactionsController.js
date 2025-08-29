@@ -746,11 +746,6 @@ export async function updateTransaction(req, res) {
     const { id, userId } = req.params;
     const { title, note, category } = req.body;
 
-    console.log('req.body', req.body)
-    console.log('req.params', req.params)
-
-    console.log('Raw input:', { id, userId, title, note, category, body: req.body, params: req.params });
-
     if (!title && !note && !category) {
       return res.status(400).json({ message: "At least one field (title, note, or category) is required." });
     }
@@ -759,8 +754,6 @@ export async function updateTransaction(req, res) {
     const cleanTitle = title && title.trim() !== '' ? title.trim() : null;
     const cleanNote = note && note.trim() !== '' ? note.trim() : null;
     const cleanCategory = category && category.trim() !== '' ? category.trim() : null;
-
-    console.log('Cleaned values:', { cleanTitle, cleanNote, cleanCategory });
 
     if (!cleanTitle && !cleanNote && !cleanCategory) {
       return res.status(400).json({ message: "At least one field (title, note, or category) must have a valid value." });
@@ -771,7 +764,6 @@ export async function updateTransaction(req, res) {
     
     if (cleanTitle && cleanNote && cleanCategory) {
       // All three fields provided
-      console.log('Updating title, note, and category');
       result = await sql`
         UPDATE transactions 
         SET title = ${cleanTitle}, note = ${cleanNote}, category = ${cleanCategory}
@@ -780,7 +772,6 @@ export async function updateTransaction(req, res) {
       `;
     } else if (cleanTitle && cleanNote) {
       // Both title and note provided
-      console.log('Updating both title and note');
       result = await sql`
         UPDATE transactions 
         SET title = ${cleanTitle}, note = ${cleanNote} 
@@ -789,7 +780,6 @@ export async function updateTransaction(req, res) {
       `;
     } else if (cleanTitle && cleanCategory) {
       // Title and category provided
-      console.log('Updating title and category');
       result = await sql`
         UPDATE transactions 
         SET title = ${cleanTitle}, category = ${cleanCategory}
@@ -798,7 +788,6 @@ export async function updateTransaction(req, res) {
       `;
     } else if (cleanNote && cleanCategory) {
       // Note and category provided
-      console.log('Updating note and category');
       result = await sql`
         UPDATE transactions 
         SET note = ${cleanNote}, category = ${cleanCategory}
@@ -807,7 +796,6 @@ export async function updateTransaction(req, res) {
       `;
     } else if (cleanTitle) {
       // Only title provided
-      console.log('Updating only title');
       result = await sql`
         UPDATE transactions 
         SET title = ${cleanTitle} 
@@ -816,7 +804,6 @@ export async function updateTransaction(req, res) {
       `;
     } else if (cleanNote) {
       // Only note provided
-      console.log('Updating only note');
       result = await sql`
         UPDATE transactions 
         SET note = ${cleanNote} 
@@ -825,7 +812,6 @@ export async function updateTransaction(req, res) {
       `;
     } else if (cleanCategory) {
       // Only category provided
-      console.log('Updating only category');
       result = await sql`
         UPDATE transactions 
         SET category = ${cleanCategory}
@@ -834,52 +820,6 @@ export async function updateTransaction(req, res) {
       `;
     }
 
-    console.log('req.body', req.body)
-    console.log('req.params', req.params)
-
-    console.log('Raw input:', { id, userId, title, note, body: req.body, params: req.params });
-
-    if (!title && !note) {
-      return res.status(400).json({ message: "At least one field (title or note) is required." });
-    }
-
-    
-    console.log('Cleaned values:', { cleanTitle, cleanNote });
-
-    if (!cleanTitle && !cleanNote) {
-      return res.status(400).json({ message: "At least one field (title or note) must have a valid value." });
-    }
-
-    if (cleanTitle && cleanNote) {
-      // Both fields provided
-      console.log('Updating both title and note');
-      result = await sql`
-        UPDATE transactions 
-        SET title = ${cleanTitle}, note = ${cleanNote} 
-        WHERE id = ${id} AND user_id = ${userId} 
-        RETURNING *
-      `;
-    } else if (cleanTitle) {
-      // Only title provided
-      console.log('Updating only title');
-      result = await sql`
-        UPDATE transactions 
-        SET title = ${cleanTitle} 
-        WHERE id = ${id} AND user_id = ${userId} 
-        RETURNING *
-      `;
-    } else if (cleanNote) {
-      // Only note provided
-      console.log('Updating only note');
-      result = await sql`
-        UPDATE transactions 
-        SET note = ${cleanNote} 
-        WHERE id = ${id} AND user_id = ${userId} 
-        RETURNING *
-      `;
-    }
-
-    console.log('result', result)
     if (result.length === 0) {
       return res.status(404).json({ message: "Transaction not found." });
     }

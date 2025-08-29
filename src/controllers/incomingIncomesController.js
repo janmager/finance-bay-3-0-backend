@@ -153,7 +153,7 @@ export async function checkAllUsersForIncomingIncomes() {
       }
     }
     
-    console.log("Users successfully checked for incoming incomes due for settlement.");
+    // Successfully processed all users
     return true;
   } catch (e) {
     console.log("Error checking incoming incomes: ", e);

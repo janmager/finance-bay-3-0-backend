@@ -5,13 +5,15 @@ import {
   getUserSavings,
   depositToSaving,
   withdrawFromSaving,
+  updateSaving,
 } from "../controllers/savingsController.js";
 
 const router = express.Router();
 
 router.get("/:userId", getUserSavings);
 router.post("/:userId", createSaving);
-router.delete("/:id", deleteSaving);
+router.put("/:id/:userId", updateSaving);
+router.delete("/:id/:userId", deleteSaving);
 router.post("/deposit/:userId", depositToSaving);
 router.post("/withdraw/:userId", withdrawFromSaving);
 

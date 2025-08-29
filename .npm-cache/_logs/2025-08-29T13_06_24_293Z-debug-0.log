@@ -1,0 +1,87 @@
+0 verbose cli /opt/homebrew/Cellar/node/24.2.0/bin/node /opt/homebrew/bin/npm
+1 info using npm@11.5.2
+2 info using node@v24.2.0
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/janmager/Desktop/finance-bay-3-0/backend/.npmrc
+5 silly config load:file:/Users/janmager/.npmrc
+6 silly config load:file:/opt/homebrew/etc/npmrc
+7 verbose title npm install
+8 verbose argv "install"
+9 verbose logfile logs-max:10 dir:/Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-29T13_06_24_293Z-
+10 verbose logfile /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-29T13_06_24_293Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 silly idealTree buildDeps
+14 verbose shrinkwrap failed to load node_modules/.package-lock.json missing from node_modules: node_modules/fsevents
+15 silly reify mark retired [
+15 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/axios'
+15 silly reify ]
+16 silly reify mark retired [
+16 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/dayjs'
+16 silly reify ]
+17 silly reify mark retired [
+17 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/follow-redirects'
+17 silly reify ]
+18 silly reify mark retired [
+18 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/proxy-from-env'
+18 silly reify ]
+19 silly reify mark retired [ '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/scmp' ]
+20 silly reify mark retired [
+20 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/twilio'
+20 silly reify ]
+21 silly reify mark retired [
+21 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/xmlbuilder'
+21 silly reify ]
+22 silly reify mark retired [
+22 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/redis'
+22 silly reify ]
+23 silly reify mark retired [
+23 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/ratelimit'
+23 silly reify ]
+24 silly reify mark retired [
+24 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/core-analytics'
+24 silly reify ]
+25 silly reify moves {
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/axios': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/.axios-GTdSgSGj',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/dayjs': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/.dayjs-BwO3ucug',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/follow-redirects': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/.follow-redirects-U1Q1Evq3',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/proxy-from-env': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/.proxy-from-env-IQxJkogR',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/scmp': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/.scmp-cOP68iee',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/twilio': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/.twilio-wK9bsj1a',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/xmlbuilder': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/.xmlbuilder-tkTL3x2r',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/redis': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/.redis-xpHzA47l',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/ratelimit': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/.ratelimit-yEa0OgC5',
+25 silly reify   '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/core-analytics': '/Users/janmager/Desktop/finance-bay-3-0/backend/node_modules/@upstash/.core-analytics-hk9lacTj'
+25 silly reify }
+26 http cache @upstash/core-analytics@https://registry.npmjs.org/@upstash/core-analytics/-/core-analytics-0.0.10.tgz 0ms (cache hit)
+27 http cache @upstash/redis@https://registry.npmjs.org/@upstash/redis/-/redis-1.35.3.tgz 0ms (cache hit)
+28 http cache fsevents@https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz 0ms (cache hit)
+29 silly tarball no local data for @upstash/core-analytics@https://registry.npmjs.org/@upstash/core-analytics/-/core-analytics-0.0.10.tgz. Extracting by manifest.
+30 silly tarball no local data for @upstash/redis@https://registry.npmjs.org/@upstash/redis/-/redis-1.35.3.tgz. Extracting by manifest.
+31 silly tarball no local data for fsevents@https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz. Extracting by manifest.
+32 http cache @upstash/ratelimit@https://registry.npmjs.org/@upstash/ratelimit/-/ratelimit-2.0.6.tgz 0ms (cache hit)
+33 silly tarball no local data for @upstash/ratelimit@https://registry.npmjs.org/@upstash/ratelimit/-/ratelimit-2.0.6.tgz. Extracting by manifest.
+34 http fetch GET 200 https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz 163ms (cache miss)
+35 http fetch GET 200 https://registry.npmjs.org/@upstash/redis/-/redis-1.35.3.tgz 215ms (cache miss)
+36 http fetch GET 200 https://registry.npmjs.org/@upstash/core-analytics/-/core-analytics-0.0.10.tgz 235ms (cache miss)
+37 http fetch GET 200 https://registry.npmjs.org/@upstash/ratelimit/-/ratelimit-2.0.6.tgz 882ms (cache miss)
+38 silly ADD node_modules/fsevents
+39 silly CHANGE node_modules/@upstash/core-analytics
+40 silly CHANGE node_modules/@upstash/ratelimit
+41 silly CHANGE node_modules/@upstash/redis
+42 silly REMOVE node_modules/xmlbuilder
+43 silly REMOVE node_modules/twilio
+44 silly REMOVE node_modules/twilio/node_modules/https-proxy-agent
+45 silly REMOVE node_modules/twilio/node_modules/agent-base
+46 silly REMOVE node_modules/scmp
+47 silly REMOVE node_modules/proxy-from-env
+48 silly REMOVE node_modules/follow-redirects
+49 silly REMOVE node_modules/dayjs
+50 silly REMOVE node_modules/axios
+51 silly REMOVE node_modules/axios/node_modules/form-data
+52 verbose cwd /Users/janmager/Desktop/finance-bay-3-0/backend
+53 verbose os Darwin 24.4.0
+54 verbose node v24.2.0
+55 verbose npm  v11.5.2
+56 verbose exit 0
+57 info ok

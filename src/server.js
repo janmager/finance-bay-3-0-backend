@@ -13,7 +13,6 @@ import incomingPaymentsRoute from "./routes/incomingPaymentsRoute.js";
 import incomingIncomesRoute from "./routes/incomingIncomesRoute.js";
 import aiRoute from "./routes/aiRoute.js";
 import aiLogsRoute from "./routes/aiLogsRoute.js";
-import whatsappRoute from "./routes/whatsappRoute.js";
 import currenciesRoute from "./routes/currenciesRoute.js";
 import foreignCurrenciesRoute from "./routes/foreignCurrenciesRoute.js";
 import cors from "cors";
@@ -58,7 +57,6 @@ app.use("/api/incoming-payments", incomingPaymentsRoute);
 app.use("/api/incoming-incomes", incomingIncomesRoute);
 app.use("/api/ai", aiRoute);
 app.use("/api/ai-logs", aiLogsRoute);
-app.use("/api/whatsapp", whatsappRoute);
 app.use("/api/currencies", currenciesRoute);
 app.use("/api/foreign-currencies", foreignCurrenciesRoute);
 

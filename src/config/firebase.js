@@ -23,15 +23,14 @@ try {
       client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL
     };
 
-    firebaseApp = admin.initializeApp({
+    admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      projectId: process.env.FIREBASE_PROJECT_ID
+      databaseURL: process.env.FIREBASE_DATABASE_URL
     });
-
-    console.log('✅ Firebase Admin SDK initialized successfully');
+    
+    // Successfully initialized
   } else {
-    firebaseApp = admin.app();
-    console.log('✅ Firebase Admin SDK already initialized');
+    // Already initialized
   }
 } catch (error) {
   console.error('❌ Error initializing Firebase Admin SDK:', error);
@@ -52,7 +51,6 @@ export async function sendNotificationToUser(userId, notification) {
     `;
 
     if (userResult.length === 0 || !userResult[0].fcm_tokens || userResult[0].fcm_tokens.length === 0) {
-      console.log(`No FCM tokens found for user ${userId}`);
       return { success: false, message: 'No FCM tokens found for user' };
     }
 
@@ -63,14 +61,12 @@ export async function sendNotificationToUser(userId, notification) {
       try {
         fcmTokens = JSON.parse(fcmTokens);
       } catch (parseError) {
-        console.log("Error parsing FCM tokens string:", parseError);
         return { success: false, message: 'Invalid FCM tokens format' };
       }
     }
     
     // Ensure it's an array
     if (!Array.isArray(fcmTokens)) {
-      console.log(`FCM tokens is not an array: ${typeof fcmTokens}`);
       return { success: false, message: 'FCM tokens is not an array' };
     }
 
@@ -113,8 +109,6 @@ export async function sendNotificationToUser(userId, notification) {
 
     const successCount = results.filter(r => r.success).length;
     const totalCount = results.length;
-
-    console.log(`Notification sent to ${successCount}/${totalCount} devices for user ${userId}`);
 
     return {
       success: successCount > 0,

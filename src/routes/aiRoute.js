@@ -22,11 +22,15 @@ const upload = multer({
 
 // POST /api/ai - Process AI request with text and image
 // Accept any field name for the image file
-router.post('/', upload.any(), (req, res, next) => {
-  console.log('Request headers:', req.headers);
-  console.log('Request body:', req.body);
-  console.log('Request files:', req.files);
-  next();
-}, processAIRequest);
+router.post('/', upload.any(), async (req, res, next) => {
+  try {
+    // Process the request
+    const result = await processAIRequest(req.body, req.files);
+    res.json(result);
+  } catch (error) {
+    console.error('Error processing AI request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 export default router;

@@ -247,7 +247,7 @@ export async function updateUserFCMToken(req, res) {
     // If token doesn't exist, add it
     if (!currentTokens.includes(fcm_token)) {
       currentTokens.push(fcm_token);
-      
+       
       const updatedUser = await sql`
         UPDATE users 
         SET fcm_tokens = ${currentTokens} 

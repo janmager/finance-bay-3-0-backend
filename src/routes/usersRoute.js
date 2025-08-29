@@ -9,7 +9,7 @@ router.post("/updateBalance/:userId", updateUserBalance);
 router.post("/updateMonthlyLimit/:userId", updateUserMonthlyLimit);
 router.post("/updateUsername/:userId", updateUserUsername);
 router.get("/totalAccountValue/:userId", getTotalAccountValue);
-router.post("/updateFcmToken", updateUserFCMToken);
-router.delete("/fcm-token/:userId", removeUserFCMToken);
+router.post("/fcm-token", updateUserFCMToken);
+router.delete("/fcm-token", removeUserFCMToken);
 
 export default router;

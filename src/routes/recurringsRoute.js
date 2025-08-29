@@ -5,6 +5,6 @@ const router = express.Router();
 
 router.get("/:userId", getRecurrings);
 router.post("/:userId", createRecurring);
-router.delete("/:recurringId", deleteRecurring);
+router.delete("/:recurringId/:userId", deleteRecurring);
 
 export default router;

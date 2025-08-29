@@ -38,13 +38,36 @@ export async function deleteRecurring(req, res) {
   try {
     const { recurringId, userId } = req.params;
 
+    // Sprawdź czy recurring istnieje
+    const existingRecurring = await sql`
+      SELECT * FROM recurrings WHERE id = ${recurringId} AND user_id = ${userId}
+    `;
+
+    if (existingRecurring.length === 0) {
+      return res.status(404).json({ 
+        message: "Recurring payment not found or you don't have permission to delete it." 
+      });
+    }
+
+    // Usuń recurring
     const result = await sql`
-            DELETE FROM recurrings WHERE id = ${recurringId} AND user_id = ${userId} RETURNING *
-        `;
-    res.status(200).json({ message: "Recurring deleted successfully." });
+      DELETE FROM recurrings WHERE id = ${recurringId} AND user_id = ${userId} RETURNING *
+    `;
+
+    if (result.length === 0) {
+      return res.status(500).json({ 
+        message: "Failed to delete recurring payment." 
+      });
+    }
+
+    console.log(`✅ Recurring payment ${recurringId} deleted successfully for user ${userId}`);
+    res.status(200).json({ 
+      message: "Recurring payment deleted successfully.",
+      deletedRecurring: result[0]
+    });
   } catch (e) {
-    console.log("Error deleting the recurring: ", e);
-    res.status(500).json({ message: "Something went wrong." });
+    console.error("Error deleting the recurring: ", e);
+    res.status(500).json({ message: "Something went wrong while deleting recurring payment." });
   }
 }
 

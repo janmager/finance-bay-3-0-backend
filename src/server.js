@@ -16,7 +16,7 @@ import aiLogsRoute from "./routes/aiLogsRoute.js";
 import currenciesRoute from "./routes/currenciesRoute.js";
 import foreignCurrenciesRoute from "./routes/foreignCurrenciesRoute.js";
 import cors from "cors";
-import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll, checkUsersIncomingPayments, checkUsersIncomingIncomes, refreshCurrenciesDaily } from "./config/cron.js";
+import { checkUsersRecurrings, saveUsersWalletsBalances, wakeupJob, saveUsersAccountsValueAll, checkUsersIncomingPayments, checkUsersIncomingIncomes, refreshCurrenciesDaily, checkUpcomingPaymentsNotifications } from "./config/cron.js";
 import { initializeCurrencies } from "./controllers/currenciesController.js";
 import bodyParser from "body-parser";
 
@@ -42,6 +42,7 @@ if (process.env.NODE_ENV === "production" || test) {
   checkUsersIncomingPayments.start();
   checkUsersIncomingIncomes.start();
   refreshCurrenciesDaily.start();
+  checkUpcomingPaymentsNotifications.start();
 }
 
 const PORT = process.env.PORT || 5001;

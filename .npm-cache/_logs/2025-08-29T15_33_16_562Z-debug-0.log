@@ -5,10 +5,10 @@
 4 silly config load:file:/Users/janmager/Desktop/finance-bay-3-0/backend/.npmrc
 5 silly config load:file:/Users/janmager/.npmrc
 6 silly config load:file:/opt/homebrew/etc/npmrc
-7 verbose title npm start
-8 verbose argv "start"
-9 verbose logfile logs-max:10 dir:/Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-29T15_20_37_178Z-
-10 verbose logfile /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-29T15_20_37_178Z-debug-0.log
+7 verbose title npm run dev
+8 verbose argv "run" "dev"
+9 verbose logfile logs-max:10 dir:/Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-29T15_33_16_562Z-
+10 verbose logfile /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-29T15_33_16_562Z-debug-0.log
 11 silly logfile start cleaning logs, removing 1 files
 12 silly logfile done cleaning log files
 13 verbose cwd /Users/janmager/Desktop/finance-bay-3-0/backend
@@ -17,4 +17,4 @@
 16 verbose npm  v11.5.2
 17 verbose exit 1
 18 verbose code 1
-19 error A complete log of this run can be found in: /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-29T15_20_37_178Z-debug-0.log
+19 error A complete log of this run can be found in: /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-29T15_33_16_562Z-debug-0.log

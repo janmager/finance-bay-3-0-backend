@@ -6,6 +6,7 @@ import { checkAllUsersForIncomingIncomes } from "../controllers/incomingIncomesC
 import { refreshCurrencyRates } from "../controllers/currenciesController.js";
 import { API_URL } from "./db.js";
 import { saveUserBalancesToLogs, saveUserTotalAcccountValueTologs } from "../controllers/usersController.js";
+import { checkUpcomingPaymentsAndNotify } from "../controllers/upcomingPaymentsNotificationsController.js";
 
 // for active state render server (going to sleep after 15min of disactive)
 export const wakeupJob = new cron.CronJob("*/14 * * * *", function () {
@@ -41,7 +42,7 @@ export const checkUsersRecurrings = new cron.CronJob("0 0 */6 * * *", function a
 export const saveUsersWalletsBalances = new cron.CronJob("0 0 */6 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
-  const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${gmtPlus2.getMonth() + 1}.${gmtPlus2.getFullYear()}]`;
+  const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;
   
   saveUserBalancesToLogs();
   console.log(`[CRON] ${timeString} saveUsersWalletsBalances successfully.`);
@@ -67,7 +68,7 @@ export const saveUsersAccountsValueAll = new cron.CronJob("0 0 22 * * *", functi
 export const checkUsersIncomingPayments = new cron.CronJob("0 0 22 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
-  const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${gmtPlus2.getMonth() + 1}.${gmtPlus2.getFullYear()}]`;
+  const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;
   
   checkAllUsersForIncomingPayments();
   console.log(`[CRON] ${timeString} checkUsersIncomingPayments successfully.`);
@@ -84,6 +85,19 @@ export const checkUsersIncomingIncomes = new cron.CronJob("0 0 22 * * *", functi
   
   checkAllUsersForIncomingIncomes();
   console.log(`[CRON] ${timeString} checkUsersIncomingIncomes successfully.`);
+});
+
+// Every day at 03:00 GMT+2 (01:00 GMT+0)
+// Wykonuje się o 03:00 w czasie GMT+2
+// Serwer GMT+0: 01:00 (aktualnego dnia)
+// Klient GMT+2: 03:00 (aktualnego dnia)
+export const checkUpcomingPaymentsNotifications = new cron.CronJob("0 0 3 * * *", function async () {
+  const now = new Date();
+  const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
+  const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;
+  
+  checkUpcomingPaymentsAndNotify();
+  console.log(`[CRON] ${timeString} checkUpcomingPaymentsNotifications successfully.`);
 });
 
 // Every day at 00:00 GMT+2 (22:00 GMT+0)

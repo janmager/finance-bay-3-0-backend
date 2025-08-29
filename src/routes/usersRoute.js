@@ -1,6 +1,7 @@
 import express from "express"
 import { createUser, getUserOverview, updateUserBalance, getTotalAccountValue, updateUserMonthlyLimit, updateUserUsername, updateUserFCMToken, removeUserFCMToken } from "../controllers/usersController.js";
 import { sendNotificationToUser } from "../config/firebase.js";
+import { testUpcomingPaymentsNotification } from "../controllers/upcomingPaymentsNotificationsController.js";
 
 const router = express.Router();
 
@@ -37,6 +38,25 @@ router.post("/test-notification/:userId", async (req, res) => {
     console.error("Error sending test notification:", error);
     res.status(500).json({ 
       message: "Error sending test notification", 
+      error: error.message 
+    });
+  }
+});
+
+// Test endpoint for upcoming payments notifications
+router.post("/test-upcoming-payments/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const result = await testUpcomingPaymentsNotification(userId);
+    res.status(200).json({
+      message: "Upcoming payments test notification sent",
+      result
+    });
+  } catch (error) {
+    console.error("Error sending upcoming payments test notification:", error);
+    res.status(500).json({ 
+      message: "Error sending upcoming payments test notification", 
       error: error.message 
     });
   }

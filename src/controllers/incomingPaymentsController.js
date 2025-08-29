@@ -166,7 +166,8 @@ export async function checkAllUsersForIncomingPayments() {
       }
       
       // Successfully processed all users
-    } catch (e) {
-      console.log("Error checking incoming payments: ", e);
     }
+  } catch (e) {
+    console.log("Error checking incoming payments: ", e);
+  }
 }

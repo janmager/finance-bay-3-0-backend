@@ -54,7 +54,8 @@ export async function initDB(){
             monthly_limit DECIMAL(10,2) DEFAULT 3000,
             avatar TEXT,
             currency VARCHAR(10) DEFAULT 'pln',
-            balance DECIMAL(10,2) DEFAULT 0
+            balance DECIMAL(10,2) DEFAULT 0,
+            fcm_tokens JSONB DEFAULT '[]'::jsonb
         )`;
 
         await sql`CREATE TABLE IF NOT EXISTS currencies (

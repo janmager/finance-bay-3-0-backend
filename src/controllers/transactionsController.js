@@ -1,5 +1,6 @@
 import { sql } from "../config/db.js";
 import crypto from "crypto";
+import { sendNotificationToUser } from "../config/firebase.js";
 
 export async function getTransactionByUserId(req, res) {
   try {
@@ -669,6 +670,27 @@ export async function createTransaction(req, res) {
         )}, ${new Date().valueOf()})
     `;
       }
+    }
+
+    // Send push notification to user
+    try {
+      const notification = {
+        title: `Nowa transakcja: ${title}`,
+        body: `${transaction_type === 'expense' ? 'Wydatek' : 'Przychód'}: ${Math.abs(amount)} PLN - ${category}`,
+        data: {
+          transaction_id: id,
+          transaction_type: transaction_type,
+          amount: amount.toString(),
+          category: category,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      await sendNotificationToUser(user_id, notification);
+      console.log(`✅ Push notification sent for transaction ${id}`);
+    } catch (notificationError) {
+      console.log("⚠️ Error sending push notification:", notificationError);
+      // Don't fail the transaction if notification fails
     }
 
     res.status(201).json(transaction[0]);

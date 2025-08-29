@@ -219,7 +219,104 @@ export async function updateUserUsername(req, res) {
 
     res.status(200).json(upd[0]);
   } catch (e) {
-    console.log("Error updating user username: ", e);
+    console.log("Error updating user username:", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+// Add or update FCM token for user
+export async function updateUserFCMToken(req, res) {
+  try {
+    const { fcm_token, user_id } = req.body;
+
+    if (!user_id || !fcm_token) {
+      return res.status(400).json({ message: "User ID and FCM token are required." });
+    }
+
+    // Check if user exists
+    const userExists = await sql`
+      SELECT fcm_tokens FROM users WHERE id = ${user_id}::varchar
+    `;
+
+    if (userExists.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    let currentTokens = userExists[0].fcm_tokens || [];
+    
+    // If token doesn't exist, add it
+    if (!currentTokens.includes(fcm_token)) {
+      currentTokens.push(fcm_token);
+      
+      const updatedUser = await sql`
+        UPDATE users 
+        SET fcm_tokens = ${currentTokens} 
+        WHERE id = ${user_id}::varchar 
+        RETURNING id, fcm_tokens
+      `;
+
+      res.status(200).json({
+        message: "FCM token added successfully",
+        data: updatedUser[0]
+      });
+    } else {
+      res.status(200).json({
+        message: "FCM token already exists",
+        data: { id: user_id, fcm_tokens: currentTokens }
+      });
+    }
+
+  } catch (e) {
+    console.log("Error updating user FCM token:", e);
+    res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+// Remove FCM token for user
+export async function removeUserFCMToken(req, res) {
+  try {
+    const { fcm_token } = req.body;
+    const { userId } = req.params;
+
+    if (!userId || !fcm_token) {
+      return res.status(400).json({ message: "User ID and FCM token are required." });
+    }
+
+    // Check if user exists
+    const userExists = await sql`
+      SELECT fcm_tokens FROM users WHERE id = ${userId}::varchar
+    `;
+
+    if (userExists.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    let currentTokens = userExists[0].fcm_tokens || [];
+    
+    // Remove token if it exists
+    const updatedTokens = currentTokens.filter(token => token !== fcm_token);
+    
+    if (updatedTokens.length !== currentTokens.length) {
+      const updatedUser = await sql`
+        UPDATE users 
+        SET fcm_tokens = ${updatedTokens} 
+        WHERE id = ${userId}::varchar 
+        RETURNING id, fcm_tokens
+      `;
+
+      res.status(200).json({
+        message: "FCM token removed successfully",
+        data: updatedUser[0]
+      });
+    } else {
+      res.status(200).json({
+        message: "FCM token not found",
+        data: { id: userId, fcm_tokens: currentTokens }
+      });
+    }
+
+  } catch (e) {
+    console.log("Error removing user FCM token:", e);
     res.status(500).json({ message: "Something went wrong." });
   }
 }
@@ -240,6 +337,48 @@ export async function getUserOverview(req, res) {
       return res.status(404).json({ message: "User not found." });
     }
     const user = userDataResult[0];
+
+
+      try {
+        // Ensure fcm_tokens is an array, default to empty array if null/undefined
+        let currentTokens = user.fcm_tokens || [];
+        
+        // Convert to array if it's a string (for backward compatibility)
+        if (typeof currentTokens === 'string') {
+          try {
+            currentTokens = JSON.parse(currentTokens);
+          } catch (parseError) {
+            console.log("Error parsing FCM tokens string, starting with empty array");
+            currentTokens = [];
+          }
+        }
+        
+        // Ensure it's an array
+        if (!Array.isArray(currentTokens)) {
+          currentTokens = [];
+        }
+        
+        // Only add if token doesn't already exist
+        if (!currentTokens.includes(fcm_token)) {
+          currentTokens.push(fcm_token);
+          
+          await sql`
+            UPDATE users 
+            SET fcm_tokens = ${JSON.stringify(currentTokens)}::jsonb
+            WHERE id = ${userId}::varchar
+          `;
+          
+          console.log(`✅ FCM token added for user ${userId}. Total tokens: ${currentTokens.length}`);
+          
+          // Update user object for response
+          user.fcm_tokens = currentTokens;
+        } else {
+          console.log(`ℹ️ FCM token already exists for user ${userId}`);
+        }
+      } catch (fcmError) {
+        console.log("⚠️ Error updating FCM token:", fcmError);
+        // Don't fail the main request if FCM update fails
+      }
 
     const thisMonthTransactionsResult = await sql`
       SELECT * FROM transactions 

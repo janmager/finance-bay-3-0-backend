@@ -102,11 +102,11 @@ export async function checkUpcomingPaymentsAndNotify() {
         // Process incoming payments with detailed logging
         console.log(`📋 Processing ${incomingPayments.length} incoming payments for user ${user.id}:`);
         for (const payment of incomingPayments) {
-                      if (payment.deadline) {
-              try {
-                // Parse deadline as timestamp (number) like in mobile app
-                const deadlineDate = new Date(parseInt(payment.deadline));
-                const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+          if (payment.deadline) {
+            try {
+              // Parse deadline as timestamp (number) like in mobile app
+              const deadlineDate = new Date(parseInt(payment.deadline));
+              const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
 
               // Log all incoming payments with days until deadline
               const daysText = daysUntilDeadline === 0 ? 'dziś' :
@@ -115,8 +115,11 @@ export async function checkUpcomingPaymentsAndNotify() {
                              `przeszła o ${Math.abs(daysUntilDeadline)} dni`;
               
               console.log(`  💰 Incoming Payment: "${payment.title}" - ${payment.amount} PLN - ${daysText} (${payment.deadline})`);
+              console.log(`    📅 Deadline date: ${deadlineDate.toLocaleDateString('pl-PL')}`);
+              console.log(`    📊 Days until deadline: ${daysUntilDeadline}`);
 
-              if (daysUntilDeadline >= 0 && daysUntilDeadline <= 3) {
+              if (daysUntilDeadline >= 0 && daysUntilDeadline <= 5) {
+                console.log(`    ✅ Adding to upcoming payments (within 5 days)`);
                 upcomingPayments.push({
                   type: 'incoming_payment',
                   title: payment.title,
@@ -125,6 +128,8 @@ export async function checkUpcomingPaymentsAndNotify() {
                   daysUntil: daysUntilDeadline,
                   description: payment.description
                 });
+              } else {
+                console.log(`    ❌ Not adding (outside 5 days range)`);
               }
             } catch (dateError) {
               console.log(`⚠️ Invalid date format for payment ${payment.id}: ${payment.deadline}`);
@@ -182,8 +187,11 @@ export async function checkUpcomingPaymentsAndNotify() {
                            `przeszła o ${Math.abs(daysRemaining)} dni`;
             
             console.log(`  🔄 Recurring Payment: "${recurring.title}" - ${recurring.amount} PLN - ${daysText} (dzień ${recurring.day_of_month})`);
+            console.log(`    📅 Next payment date: ${new Date(nextPaymentDate).toLocaleDateString('pl-PL')}`);
+            console.log(`    📊 Days remaining: ${daysRemaining}`);
 
-            if (daysRemaining >= 0 && daysRemaining <= 3) {
+            if (daysRemaining >= 0 && daysRemaining <= 5) {
+              console.log(`    ✅ Adding to upcoming payments (within 5 days)`);
               upcomingPayments.push({
                 type: 'recurring_payment',
                 title: recurring.title,
@@ -192,6 +200,8 @@ export async function checkUpcomingPaymentsAndNotify() {
                 daysUntil: daysRemaining,
                 description: `Płatność cykliczna - dzień ${recurring.day_of_month}`
               });
+            } else {
+              console.log(`    ❌ Not adding (outside 5 days range)`);
             }
           } catch (parseError) {
             console.log(`⚠️ Invalid day_of_month for recurring ${recurring.id}: ${recurring.day_of_month}`);
@@ -200,7 +210,7 @@ export async function checkUpcomingPaymentsAndNotify() {
         }
 
         if (upcomingPayments.length > 0) {
-          console.log(`📅 User ${user.id} has ${upcomingPayments.length} upcoming payments within 3 days:`);
+          console.log(`📅 User ${user.id} has ${upcomingPayments.length} upcoming payments within 5 days:`);
           upcomingPayments.forEach(payment => {
             const daysText = payment.daysUntil === 0 ? 'dziś' :
                            payment.daysUntil === 1 ? 'jutro' :
@@ -208,57 +218,40 @@ export async function checkUpcomingPaymentsAndNotify() {
             console.log(`  ⚠️ "${payment.title}" - ${payment.amount} PLN - ${daysText}`);
           });
 
-          let notificationTitle = 'Nadchodzące płatności';
-          let notificationBody = '';
-
-          if (upcomingPayments.length === 1) {
-            const payment = upcomingPayments[0];
+          // Send individual notification for each upcoming payment
+          for (const payment of upcomingPayments) {
             const daysText = payment.daysUntil === 0 ? 'dziś' :
                            payment.daysUntil === 1 ? 'jutro' :
                            `za ${payment.daysUntil} dni`;
 
-            notificationTitle = `Płatność ${daysText}`;
-            notificationBody = `${payment.title}: ${payment.amount} PLN`;
-          } else {
-            // Create detailed list of all upcoming payments
-            const paymentList = upcomingPayments.map(payment => {
-              const daysText = payment.daysUntil === 0 ? 'dziś' :
-                             payment.daysUntil === 1 ? 'jutro' :
-                             `za ${payment.daysUntil} dni`;
-              return `• ${payment.title}: ${payment.amount} PLN (${daysText})`;
-            }).join('\n');
+            const notificationTitle = `Przypomnienie: ${payment.title}`;
+            const notificationBody = `Płatność ${daysText}: ${payment.amount} PLN`;
 
-            notificationTitle = `Masz ${upcomingPayments.length} nadchodzące płatności`;
-            notificationBody = paymentList;
-          }
+            const notificationData = {
+              type: 'upcoming_payment_reminder',
+              payment_type: payment.type,
+              payment_title: payment.title,
+              payment_amount: payment.amount.toString(),
+              days_until: payment.daysUntil.toString(),
+              payment_description: payment.description || '',
+              timestamp: new Date().toISOString()
+            };
 
-          const notificationData = {
-            type: 'upcoming_payments_summary',
-            payments_count: upcomingPayments.length.toString(),
-            payments: JSON.stringify(upcomingPayments.map(p => ({
-              type: p.type,
-              title: p.title,
-              amount: p.amount.toString(),
-              days_until: p.daysUntil.toString(),
-              description: p.description || ''
-            }))),
-            timestamp: new Date().toISOString()
-          };
+            try {
+              const result = await sendNotificationToUser(user.id, {
+                title: notificationTitle,
+                body: notificationBody,
+                data: notificationData
+              });
 
-          try {
-            const result = await sendNotificationToUser(user.id, {
-              title: notificationTitle,
-              body: notificationBody,
-              data: notificationData
-            });
-
-                          if (result.success) {
-                console.log(`✅ Single notification sent to user ${user.id} for ${upcomingPayments.length} upcoming payments`);
+              if (result.success) {
+                console.log(`✅ Individual reminder sent to user ${user.id} for "${payment.title}" - ${daysText}`);
               } else {
-                console.log(`⚠️ Failed to send notification to user ${user.id}: ${result.message}`);
+                console.log(`⚠️ Failed to send individual reminder to user ${user.id} for "${payment.title}": ${result.message}`);
               }
-          } catch (notificationError) {
-            console.error(`❌ Error sending notification to user ${user.id}:`, notificationError);
+            } catch (notificationError) {
+              console.error(`❌ Error sending individual reminder to user ${user.id} for "${payment.title}":`, notificationError);
+            }
           }
         } else {
           console.log(`ℹ️ No upcoming payments for user ${user.id}`);

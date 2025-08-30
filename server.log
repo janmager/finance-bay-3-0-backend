@@ -9,29 +9,75 @@
 Database initialized successfully.
 Currencies initialized successfully
 Server is up and running on PORT:  5001
-🧪 Testing upcoming payments notification for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
-📱 Sending notification to user user_30b6NwyDi6cLl41eL5aWoEl5JwH with 1 FCM tokens
-❌ Error sending to token ExponentPushToken[c5...: The registration token is not a valid FCM registration token
-📊 Notification results: 0/1 successful
-✅ Test notification result for user user_30b6NwyDi6cLl41eL5aWoEl5JwH: {
-  success: false,
-  message: 'Sent to 0/1 devices',
-  results: [
+📱 Sending notification to user user_30b6NwyDi6cLl41eL5aWoEl5JwH with 1 tokens
+📤 Sending to 1 Expo tokens
+📤 Sending 1 notifications to Expo Push API
+📋 Expo Push API response: {
+  "data": [
     {
-      token: 'ExponentPushToken[c5mHImAWncbX87m18r0U5A]',
-      success: false,
-      error: 'The registration token is not a valid FCM registration token'
+      "status": "ok",
+      "id": "0198faad-82c2-7233-9452-453210b853c0"
     }
   ]
 }
-🔔 Manual trigger of upcoming payments check
-🔔 Starting check for upcoming payments notifications...
-📱 Found 2 users total
-🔍 Processing user user_30b6NwyDi6cLl41eL5aWoEl5JwH
-✅ User user_30b6NwyDi6cLl41eL5aWoEl5JwH has FCM tokens
-📅 Found 6 incoming payments for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
-🔄 Found 7 recurring payments for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
-ℹ️ No upcoming payments for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
-🔍 Processing user user_2zoyXHnEwY1GKXoMdUdmTiybYlZ
-ℹ️ User user_2zoyXHnEwY1GKXoMdUdmTiybYlZ has no FCM tokens
-✅ Finished checking upcoming payments notifications
+✅ Expo notification sent successfully to token: ExponentPushToken[ZY...
+📊 Notification results: 1/1 successful
+📋 Will check 1 push receipts in 15 minutes
+✅ Push notification sent for transaction a9e7fcf0-3723-4234-843f-4b07ccdcfa6f
+📊 Monthly limit check for user user_30b6NwyDi6cLl41eL5aWoEl5JwH:
+  💰 Monthly limit: 4000.00 PLN
+  💸 Current expenses: 3856.81 PLN
+  ➕ New expense: 50.00 PLN
+  📈 Total after transaction: 3906.81 PLN
+  📊 Percentage used: 97.7%
+📱 Sending notification to user user_30b6NwyDi6cLl41eL5aWoEl5JwH with 1 tokens
+📤 Sending to 1 Expo tokens
+📤 Sending 1 notifications to Expo Push API
+📋 Expo Push API response: {
+  "data": [
+    {
+      "status": "ok",
+      "id": "0198faad-83cf-783e-9841-9c5ed9b581a9"
+    }
+  ]
+}
+✅ Expo notification sent successfully to token: ExponentPushToken[ZY...
+📊 Notification results: 1/1 successful
+📋 Will check 1 push receipts in 15 minutes
+✅ Monthly limit notification sent to user user_30b6NwyDi6cLl41eL5aWoEl5JwH - 97.7% used
+📱 Sending notification to user user_30b6NwyDi6cLl41eL5aWoEl5JwH with 1 tokens
+📤 Sending to 1 Expo tokens
+📤 Sending 1 notifications to Expo Push API
+📋 Expo Push API response: {
+  "data": [
+    {
+      "status": "ok",
+      "id": "0198faad-b58a-7dac-b267-0c8810de07da"
+    }
+  ]
+}
+✅ Expo notification sent successfully to token: ExponentPushToken[ZY...
+📊 Notification results: 1/1 successful
+📋 Will check 1 push receipts in 15 minutes
+✅ Push notification sent for transaction 11f17809-db65-4766-a04f-541fa6702a55
+📊 Monthly limit check for user user_30b6NwyDi6cLl41eL5aWoEl5JwH:
+  💰 Monthly limit: 4000.00 PLN
+  💸 Current expenses: 4056.81 PLN
+  ➕ New expense: 200.00 PLN
+  📈 Total after transaction: 4256.81 PLN
+  📊 Percentage used: 106.4%
+📱 Sending notification to user user_30b6NwyDi6cLl41eL5aWoEl5JwH with 1 tokens
+📤 Sending to 1 Expo tokens
+📤 Sending 1 notifications to Expo Push API
+📋 Expo Push API response: {
+  "data": [
+    {
+      "status": "ok",
+      "id": "0198faad-b694-7d1f-badf-5a38330dcf73"
+    }
+  ]
+}
+✅ Expo notification sent successfully to token: ExponentPushToken[ZY...
+📊 Notification results: 1/1 successful
+📋 Will check 1 push receipts in 15 minutes
+✅ Monthly limit notification sent to user user_30b6NwyDi6cLl41eL5aWoEl5JwH - 106.4% used

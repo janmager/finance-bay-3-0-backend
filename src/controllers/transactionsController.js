@@ -755,6 +755,16 @@ export async function createTransaction(req, res) {
       // Don't fail the transaction if notification fails
     }
 
+    // Check monthly limit if this is an expense
+    if (transaction_type === "expense") {
+      try {
+        await checkMonthlyLimitAndNotify(user_id, Math.abs(amount));
+      } catch (limitError) {
+        console.log("⚠️ Error checking monthly limit:", limitError);
+        // Don't fail the transaction if limit check fails
+      }
+    }
+
     res.status(201).json(transaction[0]);
   } catch (e) {
     console.log("Error creating the transaction: ", e);
@@ -956,5 +966,84 @@ export async function returnTransaction(req, res) {
   } catch (e) {
     console.log("Error returning the transaction: ", e);
     res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+// Funkcja do sprawdzania limitu miesięcznego i wysyłania powiadomień
+async function checkMonthlyLimitAndNotify(userId, newExpenseAmount) {
+  try {
+    // Pobierz limit miesięczny użytkownika
+    const user = await sql`
+      SELECT monthly_limit FROM users WHERE id = ${userId}
+    `;
+
+    if (user.length === 0) {
+      console.log(`⚠️ User ${userId} not found for monthly limit check`);
+      return;
+    }
+
+    const monthlyLimit = parseFloat(user[0].monthly_limit);
+    if (monthlyLimit <= 0) {
+      console.log(`ℹ️ User ${userId} has no monthly limit set`);
+      return;
+    }
+
+    // Oblicz początek bieżącego miesiąca
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonthTimestamp = startOfMonth.valueOf();
+
+    // Pobierz wszystkie wydatki w bieżącym miesiącu (włącznie z nową transakcją)
+    const currentMonthExpenses = await sql`
+      SELECT COALESCE(SUM(ABS(amount)), 0) as total_expenses 
+      FROM transactions 
+      WHERE user_id = ${userId} 
+        AND type = 'expense' 
+        AND created_at::varchar::bigint >= ${startOfMonthTimestamp}
+    `;
+
+    const currentExpenses = parseFloat(currentMonthExpenses[0].total_expenses);
+    const totalExpensesAfterNewTransaction = currentExpenses + newExpenseAmount;
+    const percentageUsed = (totalExpensesAfterNewTransaction / monthlyLimit) * 100;
+
+    console.log(`📊 Monthly limit check for user ${userId}:`);
+    console.log(`  💰 Monthly limit: ${monthlyLimit.toFixed(2)} PLN`);
+    console.log(`  💸 Current expenses: ${currentExpenses.toFixed(2)} PLN`);
+    console.log(`  ➕ New expense: ${newExpenseAmount.toFixed(2)} PLN`);
+    console.log(`  📈 Total after transaction: ${totalExpensesAfterNewTransaction.toFixed(2)} PLN`);
+    console.log(`  📊 Percentage used: ${percentageUsed.toFixed(1)}%`);
+
+    // Wyślij powiadomienie o wykorzystaniu limitu
+    const notificationTitle = 'Limit miesięczny';
+    const notificationBody = `Wydałeś już ${percentageUsed.toFixed(1)}% miesięcznego limitu.`;
+
+    const notificationData = {
+      type: 'monthly_limit_usage',
+      monthly_limit: monthlyLimit.toFixed(2),
+      current_expenses: totalExpensesAfterNewTransaction.toFixed(2),
+      percentage_used: percentageUsed.toFixed(1),
+      remaining_budget: (monthlyLimit - totalExpensesAfterNewTransaction).toFixed(2),
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      const result = await sendNotificationToUser(userId, {
+        title: notificationTitle,
+        body: notificationBody,
+        data: notificationData
+      });
+
+      if (result.success) {
+        console.log(`✅ Monthly limit notification sent to user ${userId} - ${percentageUsed.toFixed(1)}% used`);
+      } else {
+        console.log(`⚠️ Failed to send monthly limit notification to user ${userId}: ${result.message}`);
+      }
+    } catch (notificationError) {
+      console.log(`❌ Error sending monthly limit notification to user ${userId}:`, notificationError);
+    }
+
+  } catch (error) {
+    console.error(`❌ Error checking monthly limit for user ${userId}:`, error);
+    throw error;
   }
 }

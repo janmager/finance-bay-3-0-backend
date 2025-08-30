@@ -147,7 +147,7 @@ export async function checkAllUsersForIncomingPayments() {
             const transactionId = crypto.randomUUID();
             await sql`
               INSERT INTO transactions (id, user_id, title, amount, category, created_at, type, internal_operation, note)
-              VALUES (${transactionId}, ${payment.user_id}, ${payment.title || 'Incoming Payment'}, ${payment.amount}, 'incoming-payment', ${new Date().valueOf()}, 'income', false, ${payment.description || 'Auto-settled incoming payment'})
+              VALUES (${transactionId}, ${payment.user_id}, ${payment.title || 'Incoming Payment'}, ${payment.amount}, 'incoming-payment', ${new Date().valueOf()}, 'expense', false, ${payment.description || 'Auto-settled incoming payment'})
             `;
             
             // Update user balance

@@ -2,6 +2,7 @@ import express from "express"
 import { createUser, getUserOverview, updateUserBalance, getTotalAccountValue, updateUserMonthlyLimit, updateUserUsername, updateUserFCMToken, removeUserFCMToken } from "../controllers/usersController.js";
 import { sendNotificationToUser } from "../config/firebase.js";
 import { testUpcomingPaymentsNotification } from "../controllers/upcomingPaymentsNotificationsController.js";
+import { checkMonthlyLimitAndNotify } from "../controllers/transactionsController.js";
 
 const router = express.Router();
 
@@ -57,6 +58,29 @@ router.post("/test-upcoming-payments/:userId", async (req, res) => {
     console.error("Error sending upcoming payments test notification:", error);
     res.status(500).json({ 
       message: "Error sending upcoming payments test notification", 
+      error: error.message 
+    });
+  }
+});
+
+// Test endpoint for monthly limit notifications
+router.post("/monthly-limit/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log(`🧪 Monthly limit notification for user ${userId}`);
+    
+    // Wywołaj funkcję sprawdzania limitu miesięcznego
+    await checkMonthlyLimitAndNotify(userId);
+    
+    res.status(200).json({
+      message: "Monthly limit test completed",
+      success: true
+    });
+  } catch (error) {
+    console.error("Error testing monthly limit notification:", error);
+    res.status(500).json({ 
+      message: "Error testing monthly limit notification", 
       error: error.message 
     });
   }

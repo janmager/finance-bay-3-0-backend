@@ -686,6 +686,15 @@ export async function getUserMostCategoriesStats(req, res) {
 
 export async function createTransaction(req, res) {
   try {
+    console.log(`🔄 Creating transaction for user:`, req.body.user_id);
+    console.log(`📊 Transaction details:`, {
+      title: req.body.title,
+      amount: req.body.amount,
+      category: req.body.category,
+      transaction_type: req.body.transaction_type,
+      internal_operation: req.body.internal_operation
+    });
+    
     const {
       user_id,
       title,
@@ -741,7 +750,7 @@ export async function createTransaction(req, res) {
         data: {
           transaction_id: id,
           transaction_type: transaction_type,
-          amount: amount.toString(),
+          amount: Math.abs(amount).toFixed(2),
           category: category,
           category_translated: translatedCategory,
           timestamp: new Date().toISOString()
@@ -749,20 +758,32 @@ export async function createTransaction(req, res) {
       };
 
       await sendNotificationToUser(user_id, notification);
+      await checkMonthlyLimitAndNotify(user_id);
       console.log(`✅ Push notification sent for transaction ${id}`);
     } catch (notificationError) {
       console.log("⚠️ Error sending push notification:", notificationError);
       // Don't fail the transaction if notification fails
     }
 
-    // Check monthly limit if this is an expense
-    if (transaction_type === "expense") {
+    // Check monthly limit if this is an expense and not internal operation
+    console.log(`🔍 Checking monthly limit conditions for transaction:`);
+    console.log(`  📊 Transaction type: ${transaction_type}`);
+    console.log(`  🔒 Internal operation: ${internal_operation}`);
+    console.log(`  ✅ Should check limit: ${transaction_type === "expense" && !internal_operation}`);
+    
+    if (transaction_type === "expense" && !internal_operation) {
       try {
-        await checkMonthlyLimitAndNotify(user_id, Math.abs(amount));
+        console.log(`🚀 Calling checkMonthlyLimitAndNotify for user ${user_id}`);
+        // Wywołaj funkcję bezpośrednio (nie przez import)
+        const result = await checkMonthlyLimitAndNotifyDirect(user_id);
+        console.log(`✅ Monthly limit check completed with result:`, result);
       } catch (limitError) {
         console.log("⚠️ Error checking monthly limit:", limitError);
+        console.log("⚠️ Error stack:", limitError.stack);
         // Don't fail the transaction if limit check fails
       }
+    } else {
+      console.log(`ℹ️ Skipping monthly limit check - conditions not met`);
     }
 
     res.status(201).json(transaction[0]);
@@ -969,9 +990,11 @@ export async function returnTransaction(req, res) {
   }
 }
 
-// Funkcja do sprawdzania limitu miesięcznego i wysyłania powiadomień
-async function checkMonthlyLimitAndNotify(userId, newExpenseAmount) {
+// Funkcja do sprawdzania limitu miesięcznego i wysyłania powiadomień (lokalna)
+async function checkMonthlyLimitAndNotifyDirect(userId) {
   try {
+    console.log(`🚀 Starting monthly limit check for user ${userId} (notification threshold: 70%)`);
+    
     // Pobierz limit miesięczny użytkownika
     const user = await sql`
       SELECT monthly_limit FROM users WHERE id = ${userId}
@@ -988,43 +1011,79 @@ async function checkMonthlyLimitAndNotify(userId, newExpenseAmount) {
       return;
     }
 
-    // Oblicz początek bieżącego miesiąca
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfMonthTimestamp = startOfMonth.valueOf();
-
-    // Pobierz wszystkie wydatki w bieżącym miesiącu (włącznie z nową transakcją)
+    // Pobierz wszystkie wydatki w bieżącym miesiącu (tylko z internal_operation=false)
+    // Używamy tej samej metody co w getUserOverview
+    console.log(`🔍 SQL Query for user ${userId}:`);
+    console.log(`  📅 Filter: DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE)`);
+    console.log(`  💰 Type: expense`);
+    console.log(`  🔒 Internal operation: false`);
+    
     const currentMonthExpenses = await sql`
       SELECT COALESCE(SUM(ABS(amount)), 0) as total_expenses 
       FROM transactions 
       WHERE user_id = ${userId} 
         AND type = 'expense' 
-        AND created_at::varchar::bigint >= ${startOfMonthTimestamp}
+        AND internal_operation = false
+        AND DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE)
     `;
 
     const currentExpenses = parseFloat(currentMonthExpenses[0].total_expenses);
-    const totalExpensesAfterNewTransaction = currentExpenses + newExpenseAmount;
-    const percentageUsed = (totalExpensesAfterNewTransaction / monthlyLimit) * 100;
+    const percentageUsed = (currentExpenses / monthlyLimit) * 100;
 
     console.log(`📊 Monthly limit check for user ${userId}:`);
+    console.log(`  📅 Filter: DATE_TRUNC('month', to_timestamp(created_at::bigint / 1000)) = DATE_TRUNC('month', CURRENT_DATE)`);
+    console.log(`  💰 Type: expense`);
+    console.log(`  🔒 Internal operation: false`);
     console.log(`  💰 Monthly limit: ${monthlyLimit.toFixed(2)} PLN`);
     console.log(`  💸 Current expenses: ${currentExpenses.toFixed(2)} PLN`);
-    console.log(`  ➕ New expense: ${newExpenseAmount.toFixed(2)} PLN`);
-    console.log(`  📈 Total after transaction: ${totalExpensesAfterNewTransaction.toFixed(2)} PLN`);
     console.log(`  📊 Percentage used: ${percentageUsed.toFixed(1)}%`);
+    console.log(`  🔢 Calculation: (${currentExpenses.toFixed(2)} / ${monthlyLimit.toFixed(2)}) * 100 = ${percentageUsed.toFixed(1)}%`);
+
+    // Sprawdź czy procent przekracza próg do wysłania powiadomienia
+    const shouldSendNotification = percentageUsed >= 70; // Wysyłaj powiadomienie od 70%
+    
+    if (!shouldSendNotification) {
+      console.log(`ℹ️ Percentage ${percentageUsed.toFixed(1)}% is below notification threshold (70%). Skipping notification.`);
+      console.log(`✅ Monthly limit check completed for user ${userId}`);
+      return;
+    }
 
     // Wyślij powiadomienie o wykorzystaniu limitu
     const notificationTitle = 'Limit miesięczny';
     const notificationBody = `Wydałeś już ${percentageUsed.toFixed(1)}% miesięcznego limitu.`;
 
+    console.log(`📱 Notification details:`);
+    console.log(`  📋 Title: "${notificationTitle}"`);
+    console.log(`  📝 Body: "${notificationBody}"`);
+    console.log(`  📊 Percentage in notification: ${percentageUsed.toFixed(1)}%`);
+
     const notificationData = {
       type: 'monthly_limit_usage',
       monthly_limit: monthlyLimit.toFixed(2),
-      current_expenses: totalExpensesAfterNewTransaction.toFixed(2),
+      current_expenses: currentExpenses.toFixed(2),
       percentage_used: percentageUsed.toFixed(1),
-      remaining_budget: (monthlyLimit - totalExpensesAfterNewTransaction).toFixed(2),
+      remaining_budget: (monthlyLimit - currentExpenses).toFixed(2),
       timestamp: new Date().toISOString()
     };
+
+    console.log(`📦 Notification data payload:`);
+    console.log(`  📊 monthly_limit: ${notificationData.monthly_limit} PLN`);
+    console.log(`  💸 current_expenses: ${notificationData.current_expenses} PLN`);
+    console.log(`  📈 percentage_used: ${notificationData.percentage_used}%`);
+    console.log(`  💰 remaining_budget: ${notificationData.remaining_budget} PLN`);
+
+    // Sprawdź czy użytkownik ma FCM tokeny
+    const userWithTokens = await sql`
+      SELECT fcm_tokens FROM users WHERE id = ${userId}::varchar
+    `;
+
+    if (!userWithTokens[0]?.fcm_tokens || userWithTokens[0].fcm_tokens.length === 0) {
+      console.log(`ℹ️ User ${userId} has no FCM tokens. Skipping notification.`);
+      console.log(`✅ Monthly limit check completed for user ${userId}`);
+      return;
+    }
+
+    console.log(`📱 User ${userId} has ${userWithTokens[0].fcm_tokens.length} FCM tokens. Sending notification...`);
 
     try {
       const result = await sendNotificationToUser(userId, {
@@ -1042,8 +1101,16 @@ async function checkMonthlyLimitAndNotify(userId, newExpenseAmount) {
       console.log(`❌ Error sending monthly limit notification to user ${userId}:`, notificationError);
     }
 
+    console.log(`✅ Monthly limit check completed for user ${userId}`);
+    return { success: true, percentageUsed };
+
   } catch (error) {
     console.error(`❌ Error checking monthly limit for user ${userId}:`, error);
     throw error;
   }
+}
+
+// Eksportowana funkcja dla endpoint testowego
+export async function checkMonthlyLimitAndNotify(userId) {
+  return await checkMonthlyLimitAndNotifyDirect(userId);
 }

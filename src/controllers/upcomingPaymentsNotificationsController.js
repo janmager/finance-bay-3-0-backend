@@ -225,13 +225,13 @@ export async function checkUpcomingPaymentsAndNotify() {
                            `za ${payment.daysUntil} dni`;
 
             const notificationTitle = `Przypomnienie: ${payment.title}`;
-            const notificationBody = `Płatność ${daysText}: ${payment.amount} PLN`;
+            const notificationBody = `Płatność ${daysText}: ${parseFloat(payment.amount).toFixed(2)} PLN`;
 
             const notificationData = {
               type: 'upcoming_payment_reminder',
               payment_type: payment.type,
               payment_title: payment.title,
-              payment_amount: payment.amount.toString(),
+              payment_amount: parseFloat(payment.amount).toFixed(2),
               days_until: payment.daysUntil.toString(),
               payment_description: payment.description || '',
               timestamp: new Date().toISOString()

@@ -64,7 +64,7 @@ router.post("/test-upcoming-payments/:userId", async (req, res) => {
 });
 
 // Test endpoint for monthly limit notifications
-router.post("/monthly-limit/:userId", async (req, res) => {
+router.post("/test-monthly-limit/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     

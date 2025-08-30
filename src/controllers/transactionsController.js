@@ -758,7 +758,6 @@ export async function createTransaction(req, res) {
       };
 
       await sendNotificationToUser(user_id, notification);
-      // await checkMonthlyLimitAndNotify(user_id);
       console.log(`✅ Push notification sent for transaction ${id}`);
     } catch (notificationError) {
       console.log("⚠️ Error sending push notification:", notificationError);

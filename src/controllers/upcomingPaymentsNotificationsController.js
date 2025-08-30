@@ -56,11 +56,22 @@ export async function checkUpcomingPaymentsAndNotify() {
         const upcomingPayments = [];
         const today = new Date();
 
+        // Process incoming payments with detailed logging
+        console.log(`📋 Processing ${incomingPayments.length} incoming payments for user ${user.id}:`);
         for (const payment of incomingPayments) {
           if (payment.deadline) {
             try {
-              const deadlineDate = new Date(payment.deadline);
+              // Parse deadline as timestamp (number) like in mobile app
+              const deadlineDate = new Date(parseInt(payment.deadline));
               const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+
+              // Log all incoming payments with days until deadline
+              const daysText = daysUntilDeadline === 0 ? 'dziś' :
+                             daysUntilDeadline === 1 ? 'jutro' :
+                             daysUntilDeadline > 0 ? `za ${daysUntilDeadline} dni` :
+                             `przeszła o ${Math.abs(daysUntilDeadline)} dni`;
+              
+              console.log(`  💰 Incoming Payment: "${payment.title}" - ${payment.amount} PLN - ${daysText} (${payment.deadline})`);
 
               if (daysUntilDeadline >= 0 && daysUntilDeadline <= 3) {
                 upcomingPayments.push({
@@ -79,23 +90,65 @@ export async function checkUpcomingPaymentsAndNotify() {
           }
         }
 
-        const currentMonth = `${(today.getMonth() + 1).toString().padStart(2, "0")}.${today.getFullYear().toString().slice(-2)}`;
-
+        // Process recurring payments with detailed logging using same logic as UpcomingExpensesOverview
+        console.log(`🔄 Processing ${upcomingRecurrings.length} recurring payments for user ${user.id}:`);
         for (const recurring of upcomingRecurrings) {
           try {
-            if (recurring.last_month_paid !== currentMonth) {
-              const daysUntilPayment = parseInt(recurring.day_of_month) - today.getDate();
+            // Calculate next payment date using same logic as UpcomingExpensesOverview
+            const nextPaymentDate = (() => {
+              const now = new Date();
+              const currentMonth = now.getMonth();
+              const currentYear = now.getFullYear();
+              const currentDay = now.getDate();
 
-              if (daysUntilPayment >= 0 && daysUntilPayment <= 3) {
-                upcomingPayments.push({
-                  type: 'recurring_payment',
-                  title: recurring.title,
-                  amount: recurring.amount,
-                  dayOfMonth: recurring.day_of_month,
-                  daysUntil: daysUntilPayment,
-                  description: `Płatność cykliczna - dzień ${recurring.day_of_month}`
-                });
+              let nextDate = new Date(
+                currentYear,
+                currentMonth,
+                recurring.day_of_month,
+                0,
+                0,
+                0
+              );
+
+              // If the date has passed this month, set to next month
+              if (nextDate <= now) {
+                nextDate = new Date(
+                  currentYear,
+                  currentMonth + 1,
+                  recurring.day_of_month,
+                  0,
+                  0,
+                  0
+                );
               }
+              return nextDate.getTime();
+            })();
+
+            const daysRemaining = (() => {
+              const now = new Date();
+              const deadline = new Date(nextPaymentDate);
+              return Math.ceil(
+                (deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+              );
+            })();
+
+            // Log all recurring payments with days until next payment
+            const daysText = daysRemaining === 0 ? 'dziś' :
+                           daysRemaining === 1 ? 'jutro' :
+                           daysRemaining > 0 ? `za ${daysRemaining} dni` :
+                           `przeszła o ${Math.abs(daysRemaining)} dni`;
+            
+            console.log(`  🔄 Recurring Payment: "${recurring.title}" - ${recurring.amount} PLN - ${daysText} (dzień ${recurring.day_of_month})`);
+
+            if (daysRemaining >= 0 && daysRemaining <= 3) {
+              upcomingPayments.push({
+                type: 'recurring_payment',
+                title: recurring.title,
+                amount: recurring.amount,
+                dayOfMonth: recurring.day_of_month,
+                daysUntil: daysRemaining,
+                description: `Płatność cykliczna - dzień ${recurring.day_of_month}`
+              });
             }
           } catch (parseError) {
             console.log(`⚠️ Invalid day_of_month for recurring ${recurring.id}: ${recurring.day_of_month}`);
@@ -104,49 +157,48 @@ export async function checkUpcomingPaymentsAndNotify() {
         }
 
         if (upcomingPayments.length > 0) {
-          console.log(`📅 User ${user.id} has ${upcomingPayments.length} upcoming payments`);
+          console.log(`📅 User ${user.id} has ${upcomingPayments.length} upcoming payments within 3 days:`);
+          upcomingPayments.forEach(payment => {
+            const daysText = payment.daysUntil === 0 ? 'dziś' :
+                           payment.daysUntil === 1 ? 'jutro' :
+                           `za ${payment.daysUntil} dni`;
+            console.log(`  ⚠️ "${payment.title}" - ${payment.amount} PLN - ${daysText}`);
+          });
 
-          let notificationTitle = 'Nadchodzące płatności';
-          let notificationBody = '';
-
-          if (upcomingPayments.length === 1) {
-            const payment = upcomingPayments[0];
+          // Send individual notification for each upcoming payment
+          for (const payment of upcomingPayments) {
             const daysText = payment.daysUntil === 0 ? 'dziś' :
                            payment.daysUntil === 1 ? 'jutro' :
                            `za ${payment.daysUntil} dni`;
 
-            notificationTitle = `Płatność ${daysText}`;
-            notificationBody = `${payment.title}: ${payment.amount} PLN`;
-          } else {
-            notificationBody = `Masz ${upcomingPayments.length} nadchodzące płatności`;
-          }
+            const notificationTitle = `Płatność ${daysText}`;
+            const notificationBody = `${payment.title}: ${payment.amount} PLN`;
 
-          const notificationData = {
-            type: 'upcoming_payments',
-            payments_count: upcomingPayments.length.toString(),
-            payments: JSON.stringify(upcomingPayments.map(p => ({
-              type: p.type,
-              title: p.title,
-              amount: p.amount.toString(),
-              days_until: p.daysUntil.toString()
-            }))),
-            timestamp: new Date().toISOString()
-          };
+            const notificationData = {
+              type: 'upcoming_payment_individual',
+              payment_type: payment.type,
+              payment_title: payment.title,
+              payment_amount: payment.amount.toString(),
+              days_until: payment.daysUntil.toString(),
+              payment_description: payment.description || '',
+              timestamp: new Date().toISOString()
+            };
 
-          try {
-            const result = await sendNotificationToUser(user.id, {
-              title: notificationTitle,
-              body: notificationBody,
-              data: notificationData
-            });
+            try {
+              const result = await sendNotificationToUser(user.id, {
+                title: notificationTitle,
+                body: notificationBody,
+                data: notificationData
+              });
 
-            if (result.success) {
-              console.log(`✅ Notification sent to user ${user.id} for ${upcomingPayments.length} upcoming payments`);
-            } else {
-              console.log(`⚠️ Failed to send notification to user ${user.id}: ${result.message}`);
+              if (result.success) {
+                console.log(`✅ Individual notification sent to user ${user.id} for "${payment.title}" - ${daysText}`);
+              } else {
+                console.log(`⚠️ Failed to send individual notification to user ${user.id} for "${payment.title}": ${result.message}`);
+              }
+            } catch (notificationError) {
+              console.error(`❌ Error sending individual notification to user ${user.id} for "${payment.title}":`, notificationError);
             }
-          } catch (notificationError) {
-            console.error(`❌ Error sending notification to user ${user.id}:`, notificationError);
           }
         } else {
           console.log(`ℹ️ No upcoming payments for user ${user.id}`);

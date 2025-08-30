@@ -87,11 +87,7 @@ export const checkUsersIncomingIncomes = new cron.CronJob("0 0 22 * * *", functi
   console.log(`[CRON] ${timeString} checkUsersIncomingIncomes successfully.`);
 });
 
-// Every day at 03:00 GMT+2 (01:00 GMT+0)
-// Wykonuje się o 03:00 w czasie GMT+2
-// Serwer GMT+0: 01:00 (aktualnego dnia)
-// Klient GMT+2: 03:00 (aktualnego dnia)
-export const checkUpcomingPaymentsNotifications = new cron.CronJob("0 0 3 * * *", function async () {
+export const checkUpcomingPaymentsNotifications = new cron.CronJob("0 0 1 * * *", function async () {
   const now = new Date();
   const gmtPlus2 = new Date(now.getTime() + (2 * 60 * 60 * 1000)); // GMT+2
   const timeString = `[${gmtPlus2.getHours().toString().padStart(2, '0')}:${gmtPlus2.getMinutes().toString().padStart(2, '0')} ${gmtPlus2.getDate().toString().padStart(2, '0')}.${(gmtPlus2.getMonth() + 1).toString().padStart(2, '0')}.${gmtPlus2.getFullYear()}]`;

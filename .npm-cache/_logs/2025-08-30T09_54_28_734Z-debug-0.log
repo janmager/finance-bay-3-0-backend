@@ -1,0 +1,33 @@
+0 verbose cli /opt/homebrew/Cellar/node/24.2.0/bin/node /opt/homebrew/bin/npm
+1 info using npm@11.5.2
+2 info using node@v24.2.0
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 warn Expanding --i to --iwr. This will stop working in the next major version of npm.
+5 silly config load:file:/Users/janmager/Desktop/finance-bay-3-0/backend/.npmrc
+6 silly config load:file:/Users/janmager/.npmrc
+7 silly config load:file:/opt/homebrew/etc/npmrc
+8 verbose title npm run delsof :5001
+9 verbose argv "run" "delsof" "--include-workspace-root" ":5001"
+10 verbose logfile logs-max:10 dir:/Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-30T09_54_28_734Z-
+11 verbose logfile /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-30T09_54_28_734Z-debug-0.log
+12 silly logfile start cleaning logs, removing 1 files
+13 silly logfile done cleaning log files
+14 verbose stack Error: Missing script: "delsof"
+14 verbose stack
+14 verbose stack To see a list of scripts, run:
+14 verbose stack   npm run
+14 verbose stack     at #run (/opt/homebrew/lib/node_modules/npm/lib/commands/run.js:115:13)
+14 verbose stack     at async RunScript.exec (/opt/homebrew/lib/node_modules/npm/lib/commands/run.js:44:7)
+14 verbose stack     at async Npm.exec (/opt/homebrew/lib/node_modules/npm/lib/npm.js:208:9)
+14 verbose stack     at async module.exports (/opt/homebrew/lib/node_modules/npm/lib/cli/entry.js:67:5)
+15 error Missing script: "delsof"
+15 error
+15 error To see a list of scripts, run:
+15 error   npm run
+16 verbose cwd /Users/janmager/Desktop/finance-bay-3-0/backend
+17 verbose os Darwin 24.4.0
+18 verbose node v24.2.0
+19 verbose npm  v11.5.2
+20 verbose exit 1
+21 verbose code 1
+22 error A complete log of this run can be found in: /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-08-30T09_54_28_734Z-debug-0.log

@@ -32,7 +32,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(rateLimiter);
 
-let test = false;
+let test = true;
 
 if (process.env.NODE_ENV === "production" || test) {
   wakeupJob.start();

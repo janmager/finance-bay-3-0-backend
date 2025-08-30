@@ -131,7 +131,7 @@ export async function checkAllUsersForIncomingPayments() {
 
       for (const payment of incomingPayments) {
         if (payment.deadline) {
-          const deadlineDate = new Date(payment.deadline);
+          const deadlineDate = new Date(parseInt(payment.deadline));
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           

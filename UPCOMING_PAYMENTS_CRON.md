@@ -6,8 +6,8 @@ Funkcja cron `checkUpcomingPaymentsNotifications` sprawdza codziennie o 3:00 GMT
 
 ## ⏰ Harmonogram
 
-- **Czas wykonania:** Codziennie o 03:00 GMT+2 (01:00 GMT+0)
-- **Częstotliwość:** Raz dziennie
+- **Czas wykonania:** Co 5 minut
+- **Częstotliwość:** Co 5 minut
 - **Strefa czasowa:** GMT+2 (Polska)
 
 ## 🔍 Co sprawdza funkcja
@@ -71,8 +71,21 @@ Funkcja loguje:
 ### Przykładowe logi:
 ```
 🔔 Starting check for upcoming payments notifications...
-📱 Found 5 users with FCM tokens
-📅 User user123 has 2 upcoming payments
+📱 Found 5 users total
+🔍 Processing user user123
+✅ User user123 has FCM tokens
+📅 Found 3 incoming payments for user user123
+🔄 Found 2 recurring payments for user user123
+📋 Processing 3 incoming payments for user user123:
+  💰 Incoming Payment: "Rachunek za prąd" - 150 PLN - za 2 dni (2024-01-15)
+  💰 Incoming Payment: "Rachunek za gaz" - 80 PLN - jutro (2024-01-14)
+  💰 Incoming Payment: "Rachunek za wodę" - 45 PLN - za 5 dni (2024-01-18)
+🔄 Processing 2 recurring payments for user user123:
+  🔄 Recurring Payment: "Czynsz" - 1200 PLN - za 3 dni (dzień 15)
+  🔄 Recurring Payment: "Netflix" - 30 PLN - za 8 dni (dzień 20)
+📅 User user123 has 2 upcoming payments within 3 days:
+  ⚠️ "Rachunek za gaz" - 80 PLN - jutro
+  ⚠️ "Czynsz" - 1200 PLN - za 3 dni
 ✅ Notification sent to user user123 for 2 upcoming payments
 ✅ Finished checking upcoming payments notifications
 ```
@@ -81,8 +94,8 @@ Funkcja loguje:
 
 ### Plik: `src/config/cron.js`
 ```javascript
-export const checkUpcomingPaymentsNotifications = new cron.CronJob("0 0 1 * * *", function async () {
-  // Wykonuje się o 01:00 GMT+0 (03:00 GMT+2)
+export const checkUpcomingPaymentsNotifications = new cron.CronJob("*/5 * * * *", function async () {
+  // Wykonuje się co 5 minut
   checkUpcomingPaymentsAndNotify();
 });
 ```

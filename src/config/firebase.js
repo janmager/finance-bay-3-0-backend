@@ -168,8 +168,11 @@ export async function sendNotificationToUser(userId, notification) {
     const results = [];
     const receiptIds = [];
 
+    // Tymczasowo wyłącz Expo Push API do czasu skonfigurowania FCM Server Key
+    const USE_EXPO_PUSH_API = true; // Zmień na true po skonfigurowaniu FCM Server Key
+
     // Send to Expo tokens using Expo Push API
-    if (expoTokens.length > 0) {
+    if (expoTokens.length > 0 && USE_EXPO_PUSH_API) {
       try {
         console.log(`📤 Sending to ${expoTokens.length} Expo tokens`);
         const expoResult = await sendExpoPushNotification(expoTokens, notification);
@@ -198,6 +201,12 @@ export async function sendNotificationToUser(userId, notification) {
           results.push({ token, success: false, error: expoError.message });
         });
       }
+    } else if (expoTokens.length > 0 && !USE_EXPO_PUSH_API) {
+      console.log(`⚠️ Expo tokens found but Expo Push API is disabled. Skipping ${expoTokens.length} Expo tokens.`);
+      console.log(`💡 To enable Expo Push API, configure FCM Server Key in Expo Dashboard and set USE_EXPO_PUSH_API = true`);
+      expoTokens.forEach(token => {
+        results.push({ token, success: false, error: 'Expo Push API disabled - configure FCM Server Key' });
+      });
     }
 
     // Send to FCM tokens using Firebase Admin SDK (if available)

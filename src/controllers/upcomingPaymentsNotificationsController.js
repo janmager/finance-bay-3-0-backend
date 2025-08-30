@@ -1,6 +1,49 @@
 import { sql } from "../config/db.js";
 import { sendNotificationToUser } from "../config/firebase.js";
 
+// Tłumaczenia kategorii
+const CATEGORY_TRANSLATIONS = {
+  // Wydatki
+  food: "Jedzenie",
+  shopping: "Zakupy",
+  transportation: "Transport",
+  entertainment: "Rozrywka",
+  bills: "Rachunki",
+  health: "Zdrowie i uroda",
+  house: "Dom",
+  clothes: "Odzież",
+  car: "Samochód",
+  education: "Edukacja",
+  gifts: "Prezenty",
+  animals: "Zwierzęta",
+  recurring: "Płatność cykliczna",
+  travel: "Podróże",
+  overdue: "Zaległa płatność",
+  "incoming-payments": "Zaplanowany wydatek",
+  other: "Inne",
+  
+  // Przychody
+  salary: "Wypłata",
+  exchange: "Wymiana walut",
+  bonus: "Premia",
+  sell: "Sprzedaż",
+  freelance: "Freelance / Zlecenia",
+  returning: "Zwrot",
+  investments: "Inwestycje",
+  gifts_received: "Prezent",
+  "incoming-incomes": "Zaplanowany przychód",
+  
+  // Wewnętrzne
+  savings: "Oszczędności",
+  "foreign-currency": "Waluty obce",
+  "invest-goal": "Cel oszczędnościowy"
+};
+
+// Funkcja do tłumaczenia kategorii
+const translateCategory = (category) => {
+  return CATEGORY_TRANSLATIONS[category] || category;
+};
+
 // Funkcja do sprawdzania nadchodzących płatności i wysyłania powiadomień
 export async function checkUpcomingPaymentsAndNotify() {
   try {
@@ -59,11 +102,11 @@ export async function checkUpcomingPaymentsAndNotify() {
         // Process incoming payments with detailed logging
         console.log(`📋 Processing ${incomingPayments.length} incoming payments for user ${user.id}:`);
         for (const payment of incomingPayments) {
-          if (payment.deadline) {
-            try {
-              // Parse deadline as timestamp (number) like in mobile app
-              const deadlineDate = new Date(parseInt(payment.deadline));
-              const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+                      if (payment.deadline) {
+              try {
+                // Parse deadline as timestamp (number) like in mobile app
+                const deadlineDate = new Date(parseInt(payment.deadline));
+                const daysUntilDeadline = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
 
               // Log all incoming payments with days until deadline
               const daysText = daysUntilDeadline === 0 ? 'dziś' :
@@ -165,40 +208,57 @@ export async function checkUpcomingPaymentsAndNotify() {
             console.log(`  ⚠️ "${payment.title}" - ${payment.amount} PLN - ${daysText}`);
           });
 
-          // Send individual notification for each upcoming payment
-          for (const payment of upcomingPayments) {
+          let notificationTitle = 'Nadchodzące płatności';
+          let notificationBody = '';
+
+          if (upcomingPayments.length === 1) {
+            const payment = upcomingPayments[0];
             const daysText = payment.daysUntil === 0 ? 'dziś' :
                            payment.daysUntil === 1 ? 'jutro' :
                            `za ${payment.daysUntil} dni`;
 
-            const notificationTitle = `Płatność ${daysText}`;
-            const notificationBody = `${payment.title}: ${payment.amount} PLN`;
+            notificationTitle = `Płatność ${daysText}`;
+            notificationBody = `${payment.title}: ${payment.amount} PLN`;
+          } else {
+            // Create detailed list of all upcoming payments
+            const paymentList = upcomingPayments.map(payment => {
+              const daysText = payment.daysUntil === 0 ? 'dziś' :
+                             payment.daysUntil === 1 ? 'jutro' :
+                             `za ${payment.daysUntil} dni`;
+              return `• ${payment.title}: ${payment.amount} PLN (${daysText})`;
+            }).join('\n');
 
-            const notificationData = {
-              type: 'upcoming_payment_individual',
-              payment_type: payment.type,
-              payment_title: payment.title,
-              payment_amount: payment.amount.toString(),
-              days_until: payment.daysUntil.toString(),
-              payment_description: payment.description || '',
-              timestamp: new Date().toISOString()
-            };
+            notificationTitle = `Masz ${upcomingPayments.length} nadchodzące płatności`;
+            notificationBody = paymentList;
+          }
 
-            try {
-              const result = await sendNotificationToUser(user.id, {
-                title: notificationTitle,
-                body: notificationBody,
-                data: notificationData
-              });
+          const notificationData = {
+            type: 'upcoming_payments_summary',
+            payments_count: upcomingPayments.length.toString(),
+            payments: JSON.stringify(upcomingPayments.map(p => ({
+              type: p.type,
+              title: p.title,
+              amount: p.amount.toString(),
+              days_until: p.daysUntil.toString(),
+              description: p.description || ''
+            }))),
+            timestamp: new Date().toISOString()
+          };
 
-              if (result.success) {
-                console.log(`✅ Individual notification sent to user ${user.id} for "${payment.title}" - ${daysText}`);
+          try {
+            const result = await sendNotificationToUser(user.id, {
+              title: notificationTitle,
+              body: notificationBody,
+              data: notificationData
+            });
+
+                          if (result.success) {
+                console.log(`✅ Single notification sent to user ${user.id} for ${upcomingPayments.length} upcoming payments`);
               } else {
-                console.log(`⚠️ Failed to send individual notification to user ${user.id} for "${payment.title}": ${result.message}`);
+                console.log(`⚠️ Failed to send notification to user ${user.id}: ${result.message}`);
               }
-            } catch (notificationError) {
-              console.error(`❌ Error sending individual notification to user ${user.id} for "${payment.title}":`, notificationError);
-            }
+          } catch (notificationError) {
+            console.error(`❌ Error sending notification to user ${user.id}:`, notificationError);
           }
         } else {
           console.log(`ℹ️ No upcoming payments for user ${user.id}`);

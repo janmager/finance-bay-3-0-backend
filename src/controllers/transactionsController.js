@@ -2,6 +2,49 @@ import { sql } from "../config/db.js";
 import crypto from "crypto";
 import { sendNotificationToUser } from "../config/firebase.js";
 
+// Tłumaczenia kategorii
+const CATEGORY_TRANSLATIONS = {
+  // Wydatki
+  food: "Jedzenie",
+  shopping: "Zakupy",
+  transportation: "Transport",
+  entertainment: "Rozrywka",
+  bills: "Rachunki",
+  health: "Zdrowie i uroda",
+  house: "Dom",
+  clothes: "Odzież",
+  car: "Samochód",
+  education: "Edukacja",
+  gifts: "Prezenty",
+  animals: "Zwierzęta",
+  recurring: "Płatność cykliczna",
+  travel: "Podróże",
+  overdue: "Zaległa płatność",
+  "incoming-payments": "Zaplanowany wydatek",
+  other: "Inne",
+  
+  // Przychody
+  salary: "Wypłata",
+  exchange: "Wymiana walut",
+  bonus: "Premia",
+  sell: "Sprzedaż",
+  freelance: "Freelance / Zlecenia",
+  returning: "Zwrot",
+  investments: "Inwestycje",
+  gifts_received: "Prezent",
+  "incoming-incomes": "Zaplanowany przychód",
+  
+  // Wewnętrzne
+  savings: "Oszczędności",
+  "foreign-currency": "Waluty obce",
+  "invest-goal": "Cel oszczędnościowy"
+};
+
+// Funkcja do tłumaczenia kategorii
+const translateCategory = (category) => {
+  return CATEGORY_TRANSLATIONS[category] || category;
+};
+
 export async function getTransactionByUserId(req, res) {
   try {
     const { userId } = req.params;
@@ -691,14 +734,16 @@ export async function createTransaction(req, res) {
 
     // Send push notification to user
     try {
+      const translatedCategory = translateCategory(category);
       const notification = {
         title: `Nowa transakcja: ${title}`,
-        body: `${transaction_type === 'expense' ? 'Wydatek' : 'Przychód'}: ${Math.abs(amount)} PLN - ${category}`,
+        body: `${transaction_type === 'expense' ? 'Wydatek' : 'Przychód'}: ${Math.abs(amount)} PLN - ${translatedCategory}`,
         data: {
           transaction_id: id,
           transaction_type: transaction_type,
           amount: amount.toString(),
           category: category,
+          category_translated: translatedCategory,
           timestamp: new Date().toISOString()
         }
       };

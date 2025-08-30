@@ -493,12 +493,26 @@ export async function getUserMostCategoriesStats(req, res) {
             name: category,
             type: type,
             total_amount: 0,
-            percentage_of_total: 0
+            percentage_of_total: 0,
+            transactions: [] // Dodaj tablicę transakcji
           };
         }
         
         // Dodaj kwotę do kategorii
         outputObj[category].total_amount += Math.abs(amount);
+        
+        // Dodaj transakcję do listy
+        outputObj[category].transactions.push({
+          id: transaction.id,
+          title: transaction.title,
+          amount: Math.abs(amount),
+          created_at: transaction.created_at,
+          note: transaction.note,
+          day: new Date(parseInt(transaction.created_at)).getDate(),
+          category: transaction.category,
+          type: transaction.type,
+          internal_operation: transaction.internal_operation
+        });
         
         // Dodaj do całkowitej kwoty
         totalAmount += Math.abs(amount);
@@ -513,6 +527,9 @@ export async function getUserMostCategoriesStats(req, res) {
         } else {
           outputObj[category].percentage_of_total = 0;
         }
+        
+        // Sortuj transakcje według daty (najnowsze pierwsze)
+        outputObj[category].transactions.sort((a, b) => parseInt(b.created_at) - parseInt(a.created_at));
       });
       
       return { stats: outputObj, total: totalAmount };

@@ -9,4 +9,29 @@
 Database initialized successfully.
 Currencies initialized successfully
 Server is up and running on PORT:  5001
-✅ Recurring payment 7046d982-3712-4476-aaa9-19044f756f6b deleted successfully for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
+🧪 Testing upcoming payments notification for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
+📱 Sending notification to user user_30b6NwyDi6cLl41eL5aWoEl5JwH with 1 FCM tokens
+❌ Error sending to token ExponentPushToken[c5...: The registration token is not a valid FCM registration token
+📊 Notification results: 0/1 successful
+✅ Test notification result for user user_30b6NwyDi6cLl41eL5aWoEl5JwH: {
+  success: false,
+  message: 'Sent to 0/1 devices',
+  results: [
+    {
+      token: 'ExponentPushToken[c5mHImAWncbX87m18r0U5A]',
+      success: false,
+      error: 'The registration token is not a valid FCM registration token'
+    }
+  ]
+}
+🔔 Manual trigger of upcoming payments check
+🔔 Starting check for upcoming payments notifications...
+📱 Found 2 users total
+🔍 Processing user user_30b6NwyDi6cLl41eL5aWoEl5JwH
+✅ User user_30b6NwyDi6cLl41eL5aWoEl5JwH has FCM tokens
+📅 Found 6 incoming payments for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
+🔄 Found 7 recurring payments for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
+ℹ️ No upcoming payments for user user_30b6NwyDi6cLl41eL5aWoEl5JwH
+🔍 Processing user user_2zoyXHnEwY1GKXoMdUdmTiybYlZ
+ℹ️ User user_2zoyXHnEwY1GKXoMdUdmTiybYlZ has no FCM tokens
+✅ Finished checking upcoming payments notifications

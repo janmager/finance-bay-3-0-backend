@@ -737,7 +737,7 @@ export async function createTransaction(req, res) {
       const translatedCategory = translateCategory(category);
       const notification = {
         title: `Nowa transakcja: ${title}`,
-        body: `${transaction_type === 'expense' ? 'Wydatek' : 'Przychód'}: ${Math.abs(amount)} PLN - ${translatedCategory}`,
+        body: `${transaction_type === 'expense' ? 'Wydatek' : 'Przychód'}: ${Math.abs(amount).toFixed(2)} PLN - ${translatedCategory}`,
         data: {
           transaction_id: id,
           transaction_type: transaction_type,

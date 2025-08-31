@@ -70,6 +70,7 @@ WAŻNE ZASADY:
 4. TYTUŁ: Podaj nazwę sklepu/firmy z nagłówka (np. nazwa sieci handlowej, usługodawcy). Pomijaj dodatki typu "Sp. z o.o." czy "Ltd". Jeśli brak nazwy, ustaw \`"title": null\` i \`"percent_title": 0\`.
 5. KATEGORIA: Wybierz jedną z kategorii: [food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other]. Dopasuj na podstawie treści. 
 6. OPIS: Wypisz produkty/usługi wymienione w dokumencie (maksymalnie 300 znaków). Jeśli brak szczegółów, \`"description": null\` i \`"percent_description": 0\`.
+7. Jeśli jesteś pewny danego parametru ustaw percent_[parametr] na 100, jeśli nie jesteś pewny ustaw na 0.
 
 Zwróć wynik w formacie JSON:
 {

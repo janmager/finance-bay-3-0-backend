@@ -61,27 +61,29 @@ export const processAIRequest = async (req, res) => {
       textContent = text;
     } else {
       // If text doesn't start with "!" or is empty, provide financial analysis instructions
-      textContent = `Przeanalizuj ten dokument finansowy (rachunek, paragon, faktura, powiadomienie o płatności, screen potwierdzenia płatności itp.) i wyciągnij z niego kluczowe informacje finansowe.
+      textContent = `Przeanalizuj ten dokument finansowy (rachunek, paragon, faktura, powiadomienie o płatności, screen potwierdzenia płatności itp.) i wyciągnij TYLKO informacje, które faktycznie widzisz w dokumencie.
 
-WAŻNE INSTRUKCJE:
-1. KWOTA: Musisz być na 100% pewny kwoty przed jej podaniem. Jeśli nie jesteś całkowicie pewien kwoty, ustaw percent_amount na 0 i amount na null. Szukaj kwot w różnych formatach (np. "100,00 zł", "100 PLN", "100.00", "100 zł" itp.). Uwzględnij tylko kwotę końcową do zapłaty, nie częściowe kwoty.
+WAŻNE: NIE WYMYŚLAJ żadnych informacji! Analizuj tylko to, co jest napisane/widoczne w dokumencie.
 
-2. DATA: Jeśli znajdziesz datę w dokumencie, podaj ją w formacie timestamp (mili sekundy). Jeśli data nie ma roku, zakładaj że to aktualny rok (${new Date().getFullYear()}). Jeśli nie ma daty, użyj aktualnej daty.
+INSTRUKCJE:
+1. KWOTA: Znajdź kwotę w dokumencie. Jeśli nie widzisz jasnej kwoty, ustaw percent_amount na 0 i amount na null. Szukaj kwot w różnych formatach (np. "100,00 zł", "100 PLN", "100.00", "100 zł" itp.). Uwzględnij tylko kwotę końcową do zapłaty.
 
-3. TYTUŁ: Podaj nazwę sklepu/firmy/serwisu (bez rozszerzeń jak "Sp. z o.o.", "Ltd" itp.). Jeśli nie ma jasnej nazwy, użyj tytuł pasujący do dokumentu.
+2. DATA: Jeśli widzisz datę w dokumencie, podaj ją w formacie timestamp (mili sekundy). Jeśli data nie ma roku, zakładaj że to aktualny rok (${new Date().getFullYear()}). Jeśli nie widzisz daty, ustaw percent_created_at na 0 i created_at na null. Odszukaj dokładnie datę w dokumencie, zazwyczaj ona jest, nie zmyślaj daty.
 
-4. KATEGORIA: Wybierz najbardziej odpowiednią kategorię z dostępnych opcji. Dostępne kategorie: food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other.
+3. TYTUŁ: Podaj nazwę sklepu/firmy/serwisu, którą widzisz w dokumencie (bez rozszerzeń jak "Sp. z o.o.", "Ltd" itp.). Jeśli nie widzisz nazwy, ustaw percent_title na 0 i title na null.
 
-5. OPIS: Podaj główne produkty/usługi (bez szczegółów jak rabaty, upusty). Maksymalnie 300 znaków.
+4. KATEGORIA: Na podstawie tego co widzisz w dokumencie, wybierz najbardziej odpowiednią kategorię z listy.
+
+5. OPIS: Podaj produkty/usługi, które widzisz w dokumencie. Maksymalnie 300 znaków. Jeśli nie widzisz szczegółów, ustaw percent_description na 0 i description na null.
 
 Dostępne kategorie: food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other.
 
 Odpowiedź w formacie JSON:
 {
-  "title": "nazwa sklepu/firmy",
-  "amount": "kwota (tylko jeśli jesteś 100% pewien)",
+  "title": "nazwa sklepu/firmy (tylko jeśli widzisz)",
+  "amount": "kwota (tylko jeśli widzisz)",
   "category": "kategoria",
-  "description": "opis produktów/usług (max 300 znaków)",
+  "description": "opis produktów/usług (tylko jeśli widzisz)",
   "created_at": "timestamp w milisekundach",
   "percent_title": 85,
   "percent_amount": 95,
@@ -90,7 +92,7 @@ Odpowiedź w formacie JSON:
   "percent_created_at": 90
 }
 
-Parametry percent_* to wartości 0-100 oznaczające pewność odczytu. Jeśli nie jesteś pewien danej wartości, ustaw percent na 0 i wartość na null.`;
+Parametry percent_* to wartości 0-100 oznaczające pewność odczytu. Jeśli nie widzisz danej informacji w dokumencie, ustaw percent na 0 i wartość na null.`;
     }
 
     // Prepare the message for OpenAI
@@ -210,7 +212,7 @@ Parametry percent_* to wartości 0-100 oznaczające pewność odczytu. Jeśli ni
         
         // Handle date - use provided date or current date
         let transactionDate;
-        if (cleanResponse.created_at && cleanResponse.percent_created_at >= 70) {
+        if (cleanResponse.created_at && cleanResponse.percent_created_at != 100) {
           // If we have a confident date, use it
           transactionDate = new Date(parseInt(cleanResponse.created_at)).valueOf();
         } else {

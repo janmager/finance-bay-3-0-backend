@@ -61,12 +61,14 @@ export const processAIRequest = async (req, res) => {
       textContent = text;
     } else {
       // If text doesn't start with "!" or is empty, provide financial analysis instructions
+      // 3. DATA: Szukaj dat w formacie RRRR-MM-DD, DD-MM-RRRR lub podobnym. Jeśli znajdziesz datę, ZAWSZE zwróć ją w formacie **timestamp w milisekundach (UTC)**. Jeżeli data w dokumencie ma tylko dzień i miesiąc, załóż bieżący rok (\`new Date().getFullYear()\`). Jeśli nie ma daty, ustaw \`"created_at": null\` i \`"percent_created_at": 0\`.
+
       textContent = `Przeanalizuj dokładnie załączony dokument finansowy (np. rachunek, paragon, faktura, powiadomienie o płatności, screen potwierdzenia płatności). 
 
 WAŻNE ZASADY:
 1. NIE WYMYŚLAJ żadnych informacji – analizuj tylko to, co jest faktycznie widoczne w dokumencie.
 2. KWOTA: Znajdź końcową kwotę do zapłaty (np. "SUMA", "Suma PLN", "Total"). Zwróć dokładną wartość i walutę. Jeśli nie znajdziesz, ustaw \`"amount": null\` i \`"percent_amount": 0\`.
-3. DATA: Szukaj dat w formacie RRRR-MM-DD, DD-MM-RRRR lub podobnym. Jeśli znajdziesz datę, ZAWSZE zwróć ją w formacie **timestamp w milisekundach (UTC)**. Jeżeli data w dokumencie ma tylko dzień i miesiąc, załóż bieżący rok (\`new Date().getFullYear()\`). Jeśli nie ma daty, ustaw \`"created_at": null\` i \`"percent_created_at": 0\`.
+3. DATA: Ustal datę transakcji na: \`${new Date().valueOf()}\` i percent_created_at na 100.
 4. TYTUŁ: Podaj nazwę sklepu/firmy z nagłówka (np. nazwa sieci handlowej, usługodawcy). Pomijaj dodatki typu "Sp. z o.o." czy "Ltd". Jeśli brak nazwy, ustaw \`"title": null\` i \`"percent_title": 0\`.
 5. KATEGORIA: Wybierz jedną z kategorii: [food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other]. Dopasuj na podstawie treści. 
 6. OPIS: Wypisz produkty/usługi wymienione w dokumencie (maksymalnie 300 znaków). Jeśli brak szczegółów, \`"description": null\` i \`"percent_description": 0\`.
@@ -171,13 +173,14 @@ Zwróć wynik w formacie JSON:
     // Try to parse the AI response and create transaction if valid
     let transactionCreated = false;
     let transactionData = null;
+    let cleanResponse = null;
     
     try {
       const parsedResponse = JSON.parse(aiResponse);
       console.log('Parsed AI response:', parsedResponse);
       
       // Validate and clean the parsed response
-      const cleanResponse = {
+      cleanResponse = {
         title: parsedResponse.title || null,
         amount: parsedResponse.amount ? parseFloat(parsedResponse.amount.toString().replace(/[^\d.,]/g, '').replace(',', '.')) : null,
         category: parsedResponse.category || null,
@@ -273,10 +276,10 @@ Zwróć wynik w formacie JSON:
         
       } else {
         console.log('Missing required fields or low confidence for transaction:', {
-          hasTitle: !!cleanResponse.title,
-          hasAmount: !!cleanResponse.amount,
-          hasCategory: !!cleanResponse.category,
-          amountConfidence: cleanResponse.percent_amount || 0
+          hasTitle: !!(cleanResponse?.title),
+          hasAmount: !!(cleanResponse?.amount),
+          hasCategory: !!(cleanResponse?.category),
+          amountConfidence: cleanResponse?.percent_amount || 0
         });
       }
     } catch (parseError) {

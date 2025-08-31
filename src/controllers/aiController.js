@@ -61,38 +61,30 @@ export const processAIRequest = async (req, res) => {
       textContent = text;
     } else {
       // If text doesn't start with "!" or is empty, provide financial analysis instructions
-      textContent = `Przeanalizuj ten dokument finansowy (rachunek, paragon, faktura, powiadomienie o płatności, screen potwierdzenia płatności itp.) i wyciągnij TYLKO informacje, które faktycznie widzisz w dokumencie.
+      textContent = `Przeanalizuj dokładnie załączony dokument finansowy (np. rachunek, paragon, faktura, powiadomienie o płatności, screen potwierdzenia płatności). 
 
-WAŻNE: NIE WYMYŚLAJ żadnych informacji! Analizuj tylko to, co jest napisane/widoczne w dokumencie.
+WAŻNE ZASADY:
+1. NIE WYMYŚLAJ żadnych informacji – analizuj tylko to, co jest faktycznie widoczne w dokumencie.
+2. KWOTA: Znajdź końcową kwotę do zapłaty (np. "SUMA", "Suma PLN", "Total"). Zwróć dokładną wartość i walutę. Jeśli nie znajdziesz, ustaw \`"amount": null\` i \`"percent_amount": 0\`.
+3. DATA: Szukaj dat w formacie RRRR-MM-DD, DD-MM-RRRR lub podobnym. Jeśli znajdziesz datę, ZAWSZE zwróć ją w formacie **timestamp w milisekundach (UTC)**. Jeżeli data w dokumencie ma tylko dzień i miesiąc, załóż bieżący rok (\`new Date().getFullYear()\`). Jeśli nie ma daty, ustaw \`"created_at": null\` i \`"percent_created_at": 0\`.
+4. TYTUŁ: Podaj nazwę sklepu/firmy z nagłówka (np. nazwa sieci handlowej, usługodawcy). Pomijaj dodatki typu "Sp. z o.o." czy "Ltd". Jeśli brak nazwy, ustaw \`"title": null\` i \`"percent_title": 0\`.
+5. KATEGORIA: Wybierz jedną z kategorii: [food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other]. Dopasuj na podstawie treści. 
+6. OPIS: Wypisz produkty/usługi wymienione w dokumencie (maksymalnie 300 znaków). Jeśli brak szczegółów, \`"description": null\` i \`"percent_description": 0\`.
 
-INSTRUKCJE:
-1. KWOTA: Znajdź kwotę w dokumencie. Jeśli nie widzisz jasnej kwoty, ustaw percent_amount na 0 i amount na null. Szukaj kwot w różnych formatach (np. "100,00 zł", "100 PLN", "100.00", "100 zł" itp.). Uwzględnij tylko kwotę końcową do zapłaty.
-
-2. DATA: Jeśli widzisz datę w dokumencie, podaj ją w formacie timestamp (mili sekundy). Jeśli data nie ma roku, zakładaj że to aktualny rok (${new Date().getFullYear()}). Jeśli nie widzisz daty, ustaw percent_created_at na 0 i created_at na null. Odszukaj dokładnie datę w dokumencie, zazwyczaj ona jest, nie zmyślaj daty.
-
-3. TYTUŁ: Podaj nazwę sklepu/firmy/serwisu, którą widzisz w dokumencie (bez rozszerzeń jak "Sp. z o.o.", "Ltd" itp.). Jeśli nie widzisz nazwy, ustaw percent_title na 0 i title na null.
-
-4. KATEGORIA: Na podstawie tego co widzisz w dokumencie, wybierz najbardziej odpowiednią kategorię z listy.
-
-5. OPIS: Podaj produkty/usługi, które widzisz w dokumencie. Maksymalnie 300 znaków. Jeśli nie widzisz szczegółów, ustaw percent_description na 0 i description na null.
-
-Dostępne kategorie: food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other.
-
-Odpowiedź w formacie JSON:
+Zwróć wynik w formacie JSON:
 {
-  "title": "nazwa sklepu/firmy (tylko jeśli widzisz)",
-  "amount": "kwota (tylko jeśli widzisz)",
-  "category": "kategoria",
-  "description": "opis produktów/usług (tylko jeśli widzisz)",
-  "created_at": "timestamp w milisekundach",
-  "percent_title": 85,
-  "percent_amount": 95,
-  "percent_category": 70,
-  "percent_description": 60,
-  "percent_created_at": 90
-}
-
-Parametry percent_* to wartości 0-100 oznaczające pewność odczytu. Jeśli nie widzisz danej informacji w dokumencie, ustaw percent na 0 i wartość na null.`;
+  "title": "...",
+  "amount": "...",
+  "category": "...",
+  "description": "...",
+  "created_at": ...,
+  "percent_title": ...,
+  "percent_amount": ...,
+  "percent_category": ...,
+  "percent_description": ...,
+  "percent_created_at": ...
+}`
+;
     }
 
     // Prepare the message for OpenAI

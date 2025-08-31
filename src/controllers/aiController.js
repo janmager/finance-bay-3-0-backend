@@ -15,11 +15,11 @@ export const processAIRequest = async (req, res) => {
   try {
     const { text, user_id } = req.body;
     
-    // Find the first image file in req.files
-    const imageFile = req.files && req.files.length > 0 ? req.files[0] : null;
+    // Find the first file in req.files
+    const uploadedFile = req.files && req.files.length > 0 ? req.files[0] : null;
 
-    if (!imageFile) {
-      return res.status(400).json({ error: 'Image file is required' });
+    if (!uploadedFile) {
+      return res.status(400).json({ error: 'File is required' });
     }
 
     if (!user_id) {
@@ -39,14 +39,20 @@ export const processAIRequest = async (req, res) => {
       return res.status(403).json({ error: 'Premium access required' });
     }
 
-    // Verify it's an image file
-    if (!imageFile.mimetype.startsWith('image/')) {
-      return res.status(400).json({ error: 'Only image files are allowed' });
+    // Verify it's an image or PDF file
+    if (!uploadedFile.mimetype.startsWith('image/') && uploadedFile.mimetype !== 'application/pdf') {
+      return res.status(400).json({ error: 'Only image files and PDF files are allowed' });
     }
 
-    // Convert image buffer to base64
-    const imageBuffer = imageFile.buffer;
-    const base64Image = imageBuffer.toString('base64');
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (uploadedFile.size > maxSize) {
+      return res.status(400).json({ error: 'File size exceeds 10MB limit' });
+    }
+
+    // Convert file buffer to base64
+    const fileBuffer = uploadedFile.buffer;
+    const base64File = fileBuffer.toString('base64');
 
     // Determine the text content to send to OpenAI
     let textContent;
@@ -55,26 +61,28 @@ export const processAIRequest = async (req, res) => {
       textContent = text;
     } else {
       // If text doesn't start with "!" or is empty, provide financial analysis instructions
-      textContent = `Przeanalizuj plik pod kątem finansowym. 
+      textContent = `Przeanalizuj ten dokument finansowy (rachunek, paragon, faktura, powiadomienie o płatności, screen potwierdzenia płatności itp.) i wyciągnij z niego kluczowe informacje finansowe.
 
-Informacje zwrotne jakie mnie interesują to:
-- tytuł transakcji
-- kwota transakcji  
-- kategoria transakcji
-- opis transakcji (maksymalnie 300 znaków)
-- data transakcji
+WAŻNE INSTRUKCJE:
+1. KWOTA: Musisz być na 100% pewny kwoty przed jej podaniem. Jeśli nie jesteś całkowicie pewien kwoty, ustaw percent_amount na 0 i amount na null. Szukaj kwot w różnych formatach (np. "100,00 zł", "100 PLN", "100.00", "100 zł" itp.). Uwzględnij tylko kwotę końcową do zapłaty, nie częściowe kwoty.
 
-Zazwyczaj otrzymasz zdjęcie: paragonu, screen ekranu telefonu na którym gdzieś znajduje się informacja o płatności, zdjęcie faktury.
+2. DATA: Jeśli znajdziesz datę w dokumencie, podaj ją w formacie timestamp (mili sekundy). Jeśli data nie ma roku, zakładaj że to aktualny rok (${new Date().getFullYear()}). Jeśli nie ma daty, użyj aktualnej daty.
 
-Zawsze staraj się wybrać (znaleźć na grafice) takie informacje aby były odpowiednie do informacji które oczekuje na twojej informacji zwrotnej.
+3. TYTUŁ: Podaj nazwę sklepu/firmy/serwisu (bez rozszerzeń jak "Sp. z o.o.", "Ltd" itp.). Jeśli nie ma jasnej nazwy, użyj tytuł pasujący do dokumentu.
 
-Odpowiedź chcę otrzymać w formacie JSON z następującą strukturą:
+4. KATEGORIA: Wybierz najbardziej odpowiednią kategorię z dostępnych opcji. Dostępne kategorie: food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other.
+
+5. OPIS: Podaj główne produkty/usługi (bez szczegółów jak rabaty, upusty). Maksymalnie 300 znaków.
+
+Dostępne kategorie: food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other.
+
+Odpowiedź w formacie JSON:
 {
-  "title": "nazwa transakcji",
-  "amount": "kwota",
+  "title": "nazwa sklepu/firmy",
+  "amount": "kwota (tylko jeśli jesteś 100% pewien)",
   "category": "kategoria",
-  "description": "opis (max 300 znaków)",
-  "created_at": "atkualna data (timestamp w milisekundach)",
+  "description": "opis produktów/usług (max 300 znaków)",
+  "created_at": "timestamp w milisekundach",
   "percent_title": 85,
   "percent_amount": 95,
   "percent_category": 70,
@@ -82,10 +90,7 @@ Odpowiedź chcę otrzymać w formacie JSON z następującą strukturą:
   "percent_created_at": 90
 }
 
-Dla parametru category masz dostępne kategorie: food, shopping, transportation, entertainment, bills, health, house, clothes, car, education, gifts, animals, recurring, travel, overdue, incoming-payments, other.
-Dla parametru title jeśli masz dane to podaj nazwę sklepu, samą jego oficjalną nazwę bez rozszerzeń.
-Dla parametru description jeśli masz dane to podaj nazwy kupionych produktów (ich główne nazwy bez szczegółów), wypisane w liście, nie uwzględniaj rabatów, upustów itp.
-Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawierają informacje jak bardzo jesteś pewny/zgodny co do poprawności zaczytania wartości z grafiki. Jeśli nie jesteś czegoś pewien/nie masz takich danych ustaw wartość parametru na null, a wartości procentowe na 0.`;
+Parametry percent_* to wartości 0-100 oznaczające pewność odczytu. Jeśli nie jesteś pewien danej wartości, ustaw percent na 0 i wartość na null.`;
     }
 
     // Prepare the message for OpenAI
@@ -98,10 +103,10 @@ Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawieraj�
             text: textContent
           },
           {
-            type: "image_url",
-            image_url: {
-              url: `data:${imageFile.mimetype};base64,${base64Image}`
-            }
+                          type: "image_url",
+              image_url: {
+                url: `data:${uploadedFile.mimetype};base64,${base64File}`
+              }
           }
         ]
       }
@@ -109,16 +114,20 @@ Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawieraj�
 
     console.log('Sending request to OpenAI...');
     console.log('User ID:', user_id);
-    // console.log('Text content:', textContent);
-    console.log('Image file:', imageFile.originalname, `(${imageFile.mimetype})`);
+    console.log('File:', uploadedFile.originalname, `(${uploadedFile.mimetype}, ${(uploadedFile.size / 1024 / 1024).toFixed(2)}MB)`);
 
-    // Send request to OpenAI
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: messages,
-      max_tokens: 1000,
-      response_format: { type: "json_object" }, // Force JSON response
-    });
+    // Send request to OpenAI with timeout
+    const response = await Promise.race([
+      openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: messages,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }, // Force JSON response
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('OpenAI request timeout')), 60000) // 60 second timeout
+      )
+    ]);
 
     const aiResponse = response.choices[0].message.content;
     
@@ -172,16 +181,43 @@ Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawieraj�
       const parsedResponse = JSON.parse(aiResponse);
       console.log('Parsed AI response:', parsedResponse);
       
-      // Check if response contains required fields for transaction
-      if (parsedResponse.title && parsedResponse.amount && parsedResponse.category) {
+      // Validate and clean the parsed response
+      const cleanResponse = {
+        title: parsedResponse.title || null,
+        amount: parsedResponse.amount ? parseFloat(parsedResponse.amount.toString().replace(/[^\d.,]/g, '').replace(',', '.')) : null,
+        category: parsedResponse.category || null,
+        description: parsedResponse.description || '',
+        created_at: parsedResponse.created_at || null,
+        percent_title: parsedResponse.percent_title || 0,
+        percent_amount: parsedResponse.percent_amount || 0,
+        percent_category: parsedResponse.percent_category || 0,
+        percent_description: parsedResponse.percent_description || 0,
+        percent_created_at: parsedResponse.percent_created_at || 0
+      };
+      
+      console.log('Cleaned response:', cleanResponse);
+      
+      // Check if response contains required fields for transaction and amount confidence is high enough
+      if (cleanResponse.title && cleanResponse.amount && cleanResponse.category && 
+          cleanResponse.percent_amount >= 80) { // Only create transaction if amount confidence is 80% or higher
         console.log('Valid transaction data found, creating transaction...');
         
         // Prepare transaction data
-        const transactionAmount = Math.abs(parseFloat(parsedResponse.amount));
-        const transactionTitle = parsedResponse.title;
-        const transactionCategory = parsedResponse.category;
-        const transactionDescription = parsedResponse.description || '';
-        const transactionDate = parsedResponse.created_at ? (parsedResponse.created_at).valueOf() : new Date().valueOf();
+        const transactionAmount = Math.abs(cleanResponse.amount);
+        const transactionTitle = cleanResponse.title;
+        const transactionCategory = cleanResponse.category;
+        const transactionDescription = cleanResponse.description;
+        
+        // Handle date - use provided date or current date
+        let transactionDate;
+        if (cleanResponse.created_at && cleanResponse.percent_created_at >= 70) {
+          // If we have a confident date, use it
+          transactionDate = new Date(parseInt(cleanResponse.created_at)).valueOf();
+        } else {
+          // Use current date if no confident date available
+          transactionDate = new Date().valueOf();
+        }
+        
         console.log('Transaction date:', transactionDate);
         
         // Create transaction using the createTransaction function directly
@@ -190,8 +226,7 @@ Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawieraj�
           title: transactionTitle,
           amount: transactionAmount,
           category: transactionCategory,
-          created_at: new Date().valueOf(),
-          // created_at: transactionDate,
+          created_at: transactionDate,
           note: transactionDescription,
           transaction_type: 'expense',
           internal_operation: false
@@ -224,10 +259,11 @@ Parametry pewności (pewnosc_*) to wartości procentowe (0-100) które zawieraj�
         await createTransaction(mockReq, mockRes);
         
       } else {
-        console.log('Missing required fields for transaction:', {
-          hasTitle: !!parsedResponse.title,
-          hasAmount: !!parsedResponse.amount,
-          hasCategory: !!parsedResponse.category
+        console.log('Missing required fields or low confidence for transaction:', {
+          hasTitle: !!cleanResponse.title,
+          hasAmount: !!cleanResponse.amount,
+          hasCategory: !!cleanResponse.category,
+          amountConfidence: cleanResponse.percent_amount || 0
         });
       }
     } catch (parseError) {

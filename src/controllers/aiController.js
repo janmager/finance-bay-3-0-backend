@@ -192,6 +192,13 @@ Zwróć wynik w formacie JSON:
       
       console.log('Cleaned response:', cleanResponse);
       
+      // Validate amount parsing
+      if (cleanResponse.amount && (isNaN(cleanResponse.amount) || cleanResponse.amount <= 0)) {
+        console.log('Invalid amount parsed, setting to null');
+        cleanResponse.amount = null;
+        cleanResponse.percent_amount = 0;
+      }
+      
       // Check if response contains required fields for transaction and amount confidence is high enough
       if (cleanResponse.title && cleanResponse.amount && cleanResponse.category && 
           cleanResponse.percent_amount >= 80) { // Only create transaction if amount confidence is 80% or higher
@@ -205,7 +212,7 @@ Zwróć wynik w formacie JSON:
         
         // Handle date - use provided date or current date
         let transactionDate;
-        if (cleanResponse.created_at && cleanResponse.percent_created_at != 100) {
+        if (cleanResponse.created_at && cleanResponse.percent_created_at >= 70) {
           // If we have a confident date, use it
           transactionDate = new Date(parseInt(cleanResponse.created_at)).valueOf();
         } else {
@@ -234,13 +241,17 @@ Zwróć wynik w formacie JSON:
           body: transactionPayload
         };
         
+        let transactionSuccess = false;
         const mockRes = {
           status: (code) => ({
             json: (data) => {
               if (code === 201) {
                 transactionData = data;
                 transactionCreated = true;
+                transactionSuccess = true;
                 console.log('Transaction created successfully:', transactionData);
+              } else {
+                console.log('Transaction creation failed with status:', code, data);
               }
             }
           }),
@@ -251,7 +262,14 @@ Zwróć wynik w formacie JSON:
         };
         
         // Call createTransaction function directly
-        await createTransaction(mockReq, mockRes);
+        try {
+          await createTransaction(mockReq, mockRes);
+          if (!transactionSuccess) {
+            console.log('Transaction creation did not succeed');
+          }
+        } catch (transactionError) {
+          console.log('Error calling createTransaction:', transactionError);
+        }
         
       } else {
         console.log('Missing required fields or low confidence for transaction:', {
@@ -264,16 +282,40 @@ Zwróć wynik w formacie JSON:
     } catch (parseError) {
       console.log('Error parsing AI response or creating transaction:', parseError);
       console.log('Raw AI response that failed to parse:', aiResponse);
+      
+      // Return error response for malformed JSON
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid AI response format',
+        details: parseError.message,
+        rawResponse: aiResponse
+      });
     }
     
-    res.json({
+    // Prepare final response
+    const finalResponse = {
       success: true,
       response: aiResponse,
       model: response.model,
       usage: response.usage,
       transactionCreated,
-      transactionData
+      transactionData,
+      confidence: {
+        title: cleanResponse?.percent_title || 0,
+        amount: cleanResponse?.percent_amount || 0,
+        category: cleanResponse?.percent_category || 0,
+        description: cleanResponse?.percent_description || 0,
+        date: cleanResponse?.percent_created_at || 0
+      }
+    };
+    
+    console.log('Final response:', {
+      transactionCreated,
+      amountConfidence: cleanResponse?.percent_amount || 0,
+      hasValidData: !!(cleanResponse?.title && cleanResponse?.amount && cleanResponse?.category)
     });
+    
+    res.json(finalResponse);
 
   } catch (error) {
     console.error('Error processing AI request:', error);

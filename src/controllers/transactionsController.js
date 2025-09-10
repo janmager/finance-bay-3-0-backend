@@ -1113,3 +1113,99 @@ async function checkMonthlyLimitAndNotifyDirect(userId) {
 export async function checkMonthlyLimitAndNotify(userId) {
   return await checkMonthlyLimitAndNotifyDirect(userId);
 }
+
+// Funkcja wyszukiwania transakcji
+export async function searchTransactions(req, res) {
+  try {
+    const { userId } = req.params;
+    const { query } = req.body;
+
+    console.log(`🔍 Searching transactions for user ${userId}, query: "${query}"`);
+
+    if (!query || query.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Query must be at least 3 characters long"
+      });
+    }
+
+    // Normalizacja zapytania - usunięcie polskich znaków i konwersja na małe litery
+    const normalizeText = (text) => {
+      return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // usunięcie diakrytyków
+        .replace(/ą/g, 'a')
+        .replace(/ć/g, 'c')
+        .replace(/ę/g, 'e')
+        .replace(/ł/g, 'l')
+        .replace(/ń/g, 'n')
+        .replace(/ó/g, 'o')
+        .replace(/ś/g, 's')
+        .replace(/ź/g, 'z')
+        .replace(/ż/g, 'z');
+    };
+
+    const normalizedQuery = normalizeText(query);
+
+    // Zapytanie SQL z wyszukiwaniem ignorującym wielkość liter i polskie znaki
+    const result = await sql`
+      SELECT 
+        id,
+        title,
+        amount,
+        created_at,
+        note,
+        category,
+        type,
+        internal_operation
+      FROM transactions 
+      WHERE user_id = ${userId}
+        AND LOWER(
+          REPLACE(
+            REPLACE(
+              REPLACE(
+                REPLACE(
+                  REPLACE(
+                    REPLACE(
+                      REPLACE(
+                        REPLACE(
+                          REPLACE(title, 'ą', 'a'),
+                          'ć', 'c'
+                        ),
+                        'ę', 'e'
+                      ),
+                      'ł', 'l'
+                    ),
+                    'ń', 'n'
+                  ),
+                  'ó', 'o'
+                ),
+                'ś', 's'
+              ),
+              'ź', 'z'
+            ),
+            'ż', 'z'
+          )
+        ) LIKE ${'%' + normalizedQuery + '%'}
+      ORDER BY created_at DESC
+      LIMIT 100
+    `;
+
+    console.log(`✅ Search completed for user ${userId}, query: "${query}", found ${result.length} results`);
+
+    res.json({
+      success: true,
+      data: result,
+      query: query,
+      count: result.length
+    });
+
+  } catch (error) {
+    console.error("❌ Error searching transactions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error during search"
+    });
+  }
+}

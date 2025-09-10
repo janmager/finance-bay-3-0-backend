@@ -1,0 +1,26 @@
+0 verbose cli /opt/homebrew/Cellar/node/24.2.0/bin/node /opt/homebrew/bin/npm
+1 info using npm@11.5.2
+2 info using node@v24.2.0
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/janmager/Desktop/finance-bay-3-0/backend/.npmrc
+5 silly config load:file:/Users/janmager/.npmrc
+6 silly config load:file:/opt/homebrew/etc/npmrc
+7 verbose title npm run dev
+8 verbose argv "run" "dev"
+9 verbose logfile logs-max:10 dir:/Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-09-10T11_48_31_967Z-
+10 verbose logfile /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-09-10T11_48_31_967Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 http fetch GET 200 https://registry.npmjs.org/npm 154ms
+14 verbose cwd /Users/janmager/Desktop/finance-bay-3-0/backend
+15 verbose os Darwin 24.4.0
+16 verbose node v24.2.0
+17 verbose npm  v11.5.2
+18 notice
+18 notice New [33mminor[39m version of npm available! [33m11.5.2[39m -> [34m11.6.0[39m
+18 notice Changelog: [34mhttps://github.com/npm/cli/releases/tag/v11.6.0[39m
+18 notice To update run: [4mnpm install -g npm@11.6.0[24m
+18 notice  { force: true, Symbol(proc-log.meta): true }
+19 verbose exit 1
+20 verbose code 1
+21 error A complete log of this run can be found in: /Users/janmager/Desktop/finance-bay-3-0/backend/.npm-cache/_logs/2025-09-10T11_48_31_967Z-debug-0.log
